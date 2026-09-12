@@ -17,7 +17,21 @@ function chainable(result: { data: unknown; error: unknown }) {
 }
 
 const classesBuilder = chainable({ data: [{ id: 'class-1', name: 'Turma Demo' }], error: null });
-const sessionsBuilder = chainable({ data: [{ id: 'session-1', code: '1234', status: 'active' }], error: null });
+const sessionsBuilder = chainable({
+  data: [
+    {
+      id: 'session-1',
+      code: '1234',
+      status: 'active',
+      allow_notes: false,
+      allow_free_chatbot: false,
+      focus_mode: false,
+      quiz_at_end: false,
+      accessibility_mode: true,
+    },
+  ],
+  error: null,
+});
 const activitiesBuilder = chainable({
   data: [
     {
@@ -28,6 +42,7 @@ const activitiesBuilder = chainable({
   ],
   error: null,
 });
+const contentTriggersBuilder = chainable({ data: null, error: null });
 
 const fromMock = vi.fn((table: string) => {
   switch (table) {
@@ -37,6 +52,8 @@ const fromMock = vi.fn((table: string) => {
       return sessionsBuilder;
     case 'activities':
       return activitiesBuilder;
+    case 'content_triggers':
+      return contentTriggersBuilder;
     default:
       throw new Error(`unexpected table ${table}`);
   }
@@ -52,17 +69,34 @@ vi.mock('../services/supabaseClient', () => ({
   },
 }));
 
+const NO_CONFIG = {
+  allowNotes: false,
+  allowFreeChatbot: false,
+  focusMode: false,
+  quizAtEnd: false,
+  accessibilityMode: false,
+};
+
 describe('useTeacherSession', () => {
-  it('starts a session with a 4-digit code for the chosen class', async () => {
+  it('starts a session with a 4-digit code and the chosen config', async () => {
     const { result } = renderHook(() => useTeacherSession('teacher-1'));
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
-      await result.current.startSession('class-1');
+      await result.current.startSession('class-1', { ...NO_CONFIG, accessibilityMode: true });
     });
 
     expect(sessionsBuilder.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ class_id: 'class-1', teacher_id: 'teacher-1', status: 'active' }),
+      expect.objectContaining({
+        class_id: 'class-1',
+        teacher_id: 'teacher-1',
+        status: 'active',
+        allow_notes: false,
+        allow_free_chatbot: false,
+        focus_mode: false,
+        quiz_at_end: false,
+        accessibility_mode: true,
+      }),
     );
     const insertedPayload = (sessionsBuilder.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as { code: string };
     expect(insertedPayload.code).toMatch(/^\d{4}$/);
@@ -85,6 +119,31 @@ describe('useTeacherSession', () => {
       id: 'activity-1',
       type: 'quiz',
       content: { question: 'Q?', options: ['A', 'B'], correct_index: 0 },
+    });
+  });
+
+  it('exposes the session config loaded from the active session', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() => expect(result.current.sessionConfig).toEqual({ ...NO_CONFIG, accessibilityMode: true }));
+  });
+
+  it('sends a content trigger for the current session', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() => expect(result.current.session?.id).toBe('session-1'));
+
+    await act(async () => {
+      await result.current.sendContentTrigger(
+        'formula',
+        'E = mc²',
+        'Energia igual massa vezes velocidade da luz ao quadrado',
+      );
+    });
+
+    expect(contentTriggersBuilder.insert).toHaveBeenCalledWith({
+      session_id: 'session-1',
+      type: 'formula',
+      content: 'E = mc²',
+      accessibility_caption: 'Energia igual massa vezes velocidade da luz ao quadrado',
     });
   });
 });

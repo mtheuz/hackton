@@ -1,11 +1,24 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
-import type { ActivityContent, ActivityType, LiveActivity, LiveSession, TeacherClass } from '../types/modoAula';
+import type {
+  ActivityContent,
+  ActivityType,
+  ContentTriggerType,
+  LiveActivity,
+  LiveSession,
+  SessionConfig,
+  TeacherClass,
+} from '../types/modoAula';
 
 interface SessionRow {
   id: string;
   code: string;
   status: 'active' | 'finished';
+  allow_notes: boolean;
+  allow_free_chatbot: boolean;
+  focus_mode: boolean;
+  quiz_at_end: boolean;
+  accessibility_mode: boolean;
 }
 
 interface ActivityRow {
@@ -18,32 +31,46 @@ function randomCode(): string {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
 
+function configFromRow(row: SessionRow): SessionConfig {
+  return {
+    allowNotes: row.allow_notes,
+    allowFreeChatbot: row.allow_free_chatbot,
+    focusMode: row.focus_mode,
+    quizAtEnd: row.quiz_at_end,
+    accessibilityMode: row.accessibility_mode,
+  };
+}
+
 interface UseTeacherSessionResult {
   classes: TeacherClass[];
   session: LiveSession | null;
+  sessionConfig: SessionConfig | null;
   activity: LiveActivity | null;
   loading: boolean;
-  startSession: (classId: string) => Promise<void>;
+  startSession: (classId: string, config: SessionConfig) => Promise<void>;
   endSession: () => Promise<void>;
   launchActivity: (type: ActivityType, content: ActivityContent) => Promise<void>;
+  sendContentTrigger: (type: ContentTriggerType, content: string, accessibilityCaption?: string) => Promise<void>;
 }
 
 export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
   const [classes, setClasses] = useState<TeacherClass[]>([]);
   const [session, setSession] = useState<LiveSession | null>(null);
+  const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null);
   const [activity, setActivity] = useState<LiveActivity | null>(null);
   const [loading, setLoading] = useState(true);
 
   const refetchSession = useCallback(async () => {
     if (!teacherId) {
       setSession(null);
+      setSessionConfig(null);
       setLoading(false);
       return;
     }
     setLoading(true);
     const { data } = await supabase
       .from('sessions')
-      .select('id, code, status')
+      .select('id, code, status, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode')
       .eq('teacher_id', teacherId)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
@@ -52,6 +79,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
     const rows = (data ?? []) as SessionRow[];
     const current = rows[0] ?? null;
     setSession(current ? { id: current.id, code: current.code, status: current.status } : null);
+    setSessionConfig(current ? configFromRow(current) : null);
     setLoading(false);
   }, [teacherId]);
 
@@ -102,7 +130,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
   }, [session, refetchActivity]);
 
   const startSession = useCallback(
-    async (classId: string) => {
+    async (classId: string, config: SessionConfig) => {
       let code = randomCode();
       for (let attempt = 0; attempt < 5; attempt += 1) {
         const { data: taken } = await supabase
@@ -120,6 +148,11 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
         teacher_id: teacherId,
         code,
         status: 'active',
+        allow_notes: config.allowNotes,
+        allow_free_chatbot: config.allowFreeChatbot,
+        focus_mode: config.focusMode,
+        quiz_at_end: config.quizAtEnd,
+        accessibility_mode: config.accessibilityMode,
       });
       if (error) throw error;
       await refetchSession();
@@ -135,6 +168,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
       .eq('id', session.id);
     if (error) throw error;
     setSession(null);
+    setSessionConfig(null);
     setActivity(null);
   }, [session]);
 
@@ -152,5 +186,29 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
     [session, refetchActivity],
   );
 
-  return { classes, session, activity, loading, startSession, endSession, launchActivity };
+  const sendContentTrigger = useCallback(
+    async (type: ContentTriggerType, content: string, accessibilityCaption?: string) => {
+      if (!session) return;
+      const { error } = await supabase.from('content_triggers').insert({
+        session_id: session.id,
+        type,
+        content,
+        accessibility_caption: accessibilityCaption ?? null,
+      });
+      if (error) throw error;
+    },
+    [session],
+  );
+
+  return {
+    classes,
+    session,
+    sessionConfig,
+    activity,
+    loading,
+    startSession,
+    endSession,
+    launchActivity,
+    sendContentTrigger,
+  };
 }
