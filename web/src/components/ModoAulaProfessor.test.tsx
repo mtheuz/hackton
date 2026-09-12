@@ -11,6 +11,10 @@ const NO_CONFIG: SessionConfig = {
   accessibilityMode: false,
 };
 
+function openTriggerForm() {
+  fireEvent.click(screen.getByText('Enviar gatilho de conteúdo'));
+}
+
 describe('ModoAulaProfessor', () => {
   it('lets the teacher start a session with the default config', () => {
     const onStartSession = vi.fn().mockResolvedValue(undefined);
@@ -105,6 +109,26 @@ describe('ModoAulaProfessor', () => {
     expect(screen.getByText('3 (75%)')).toBeInTheDocument();
   });
 
+  it('keeps the content trigger form collapsed by default', () => {
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Conteúdo')).not.toBeInTheDocument();
+    openTriggerForm();
+    expect(screen.getByLabelText('Conteúdo')).toBeInTheDocument();
+  });
+
   it('sends a content trigger without a caption when accessibility mode is off', () => {
     const onSendContentTrigger = vi.fn().mockResolvedValue(undefined);
     render(
@@ -121,6 +145,7 @@ describe('ModoAulaProfessor', () => {
       />,
     );
 
+    openTriggerForm();
     expect(screen.queryByLabelText('Legenda de acessibilidade')).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Conteúdo'), { target: { value: 'E = mc²' } });
@@ -145,6 +170,7 @@ describe('ModoAulaProfessor', () => {
       />,
     );
 
+    openTriggerForm();
     fireEvent.change(screen.getByLabelText('Conteúdo'), { target: { value: 'E = mc²' } });
     fireEvent.change(screen.getByLabelText('Legenda de acessibilidade'), {
       target: { value: 'Energia igual massa vezes velocidade da luz ao quadrado' },

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import GearIcon from '~icons/twemoji/gear';
+import MegaphoneIcon from '~icons/twemoji/megaphone';
 import type {
   ActivityContent,
   ActivityType,
@@ -62,6 +64,7 @@ export function ModoAulaProfessor({
   const [launching, setLaunching] = useState(false);
   const [ending, setEnding] = useState(false);
   const [config, setConfig] = useState<SessionConfig>(DEFAULT_CONFIG);
+  const [triggerFormOpen, setTriggerFormOpen] = useState(false);
   const [triggerType, setTriggerType] = useState<ContentTriggerType>('formula');
   const [triggerContent, setTriggerContent] = useState('');
   const [triggerCaption, setTriggerCaption] = useState('');
@@ -73,17 +76,23 @@ export function ModoAulaProfessor({
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
         <p className="mt-1 text-xs text-ink-500">Escolha a turma e inicie a aula.</p>
 
-        <div className="mt-3 flex flex-col gap-2">
-          {CONFIG_TOGGLES.map((toggle) => (
-            <label key={toggle.key} className="flex items-center gap-2 text-sm text-ink-700">
-              <input
-                type="checkbox"
-                checked={config[toggle.key]}
-                onChange={(e) => setConfig({ ...config, [toggle.key]: e.target.checked })}
-              />
-              {toggle.label}
-            </label>
-          ))}
+        <div className="mt-4 rounded-xl border border-line-200 p-4">
+          <h3 className="flex items-center gap-1.5 text-xs font-semibold text-ink-700">
+            <GearIcon aria-hidden className="h-4 w-4" />
+            Configurações da sessão
+          </h3>
+          <div className="mt-2 flex flex-col gap-2">
+            {CONFIG_TOGGLES.map((toggle) => (
+              <label key={toggle.key} className="flex items-center gap-2 text-sm text-ink-700">
+                <input
+                  type="checkbox"
+                  checked={config[toggle.key]}
+                  onChange={(e) => setConfig({ ...config, [toggle.key]: e.target.checked })}
+                />
+                {toggle.label}
+              </label>
+            ))}
+          </div>
         </div>
 
         <div className="mt-3 flex flex-col gap-2">
@@ -149,6 +158,7 @@ export function ModoAulaProfessor({
       await onSendContentTrigger(triggerType, triggerContent.trim(), caption);
       setTriggerContent('');
       setTriggerCaption('');
+      setTriggerFormOpen(false);
     } finally {
       setSendingTrigger(false);
     }
@@ -171,52 +181,6 @@ export function ModoAulaProfessor({
       </div>
       <p className="mt-2 text-3xl font-bold tracking-widest text-brand-600">{session.code}</p>
       <p className="text-xs text-ink-500">Peça pros alunos entrarem com esse código.</p>
-
-      <div className="mt-4 flex flex-col gap-2 rounded-xl border border-line-200 p-4">
-        <h3 className="text-xs font-semibold text-ink-700">Enviar gatilho de conteúdo</h3>
-        <label htmlFor="trigger-type" className="text-xs font-semibold text-ink-700">
-          Tipo
-        </label>
-        <select
-          id="trigger-type"
-          value={triggerType}
-          onChange={(e) => setTriggerType(e.target.value as ContentTriggerType)}
-          className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
-        >
-          <option value="formula">Fórmula</option>
-          <option value="note">Anotação</option>
-        </select>
-        <label htmlFor="trigger-content" className="text-xs font-semibold text-ink-700">
-          Conteúdo
-        </label>
-        <textarea
-          id="trigger-content"
-          value={triggerContent}
-          onChange={(e) => setTriggerContent(e.target.value)}
-          className="min-h-16 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900"
-        />
-        {sessionConfig?.accessibilityMode && (
-          <>
-            <label htmlFor="trigger-caption" className="text-xs font-semibold text-ink-700">
-              Legenda de acessibilidade
-            </label>
-            <input
-              id="trigger-caption"
-              value={triggerCaption}
-              onChange={(e) => setTriggerCaption(e.target.value)}
-              className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
-            />
-          </>
-        )}
-        <button
-          type="button"
-          disabled={sendingTrigger || triggerContent.trim().length === 0}
-          onClick={() => void handleSendTrigger()}
-          className="mt-1 min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
-        >
-          {sendingTrigger ? 'Enviando...' : 'Enviar gatilho'}
-        </button>
-      </div>
 
       {activity && !showLauncher ? (
         <div className="mt-4 rounded-xl border border-line-200 p-4">
@@ -334,6 +298,68 @@ export function ModoAulaProfessor({
           </button>
         </div>
       )}
+
+      <div className="mt-4 rounded-xl border border-line-200 p-4">
+        <button
+          type="button"
+          onClick={() => setTriggerFormOpen((open) => !open)}
+          className="flex w-full items-center justify-between text-xs font-semibold text-ink-700"
+        >
+          <span className="flex items-center gap-1.5">
+            <MegaphoneIcon aria-hidden className="h-4 w-4" />
+            Enviar gatilho de conteúdo
+          </span>
+          <span aria-hidden className="text-ink-500">
+            {triggerFormOpen ? '−' : '+'}
+          </span>
+        </button>
+        {triggerFormOpen && (
+          <div className="mt-3 flex flex-col gap-2">
+            <label htmlFor="trigger-type" className="text-xs font-semibold text-ink-700">
+              Tipo
+            </label>
+            <select
+              id="trigger-type"
+              value={triggerType}
+              onChange={(e) => setTriggerType(e.target.value as ContentTriggerType)}
+              className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
+            >
+              <option value="formula">Fórmula</option>
+              <option value="note">Anotação</option>
+            </select>
+            <label htmlFor="trigger-content" className="text-xs font-semibold text-ink-700">
+              Conteúdo
+            </label>
+            <textarea
+              id="trigger-content"
+              value={triggerContent}
+              onChange={(e) => setTriggerContent(e.target.value)}
+              className="min-h-16 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900"
+            />
+            {sessionConfig?.accessibilityMode && (
+              <>
+                <label htmlFor="trigger-caption" className="text-xs font-semibold text-ink-700">
+                  Legenda de acessibilidade
+                </label>
+                <input
+                  id="trigger-caption"
+                  value={triggerCaption}
+                  onChange={(e) => setTriggerCaption(e.target.value)}
+                  className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
+                />
+              </>
+            )}
+            <button
+              type="button"
+              disabled={sendingTrigger || triggerContent.trim().length === 0}
+              onClick={() => void handleSendTrigger()}
+              className="mt-1 min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {sendingTrigger ? 'Enviando...' : 'Enviar gatilho'}
+            </button>
+          </div>
+        )}
+      </div>
     </section>
   );
 }
