@@ -1,5 +1,14 @@
 import { useState } from 'react';
 import type { ActivityContent, ContentTrigger, LiveActivity, LiveSession } from '../types/modoAula';
+import { QrScannerModal } from './QrScannerModal';
+
+function codeFromScan(value: string): string {
+  try {
+    return new URL(value).searchParams.get('code') ?? value;
+  } catch {
+    return value;
+  }
+}
 
 interface ModoAulaAlunoProps {
   session: LiveSession | null;
@@ -47,6 +56,7 @@ export function ModoAulaAluno({
   const [code, setCode] = useState(initialCode ?? '');
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
 
   async function handleAnswer(payload: { selectedIndex?: number; text?: string }) {
     setSubmitting(true);
@@ -55,6 +65,13 @@ export function ModoAulaAluno({
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleScan(rawValue: string) {
+    const scannedCode = codeFromScan(rawValue).trim();
+    setScannerOpen(false);
+    setCode(scannedCode);
+    if (scannedCode) void onJoin(scannedCode);
   }
 
   if (!session || session.status === 'finished') {
@@ -82,7 +99,15 @@ export function ModoAulaAluno({
             {joining ? 'Entrando...' : 'Entrar na aula'}
           </button>
         </div>
+        <button
+          type="button"
+          onClick={() => setScannerOpen(true)}
+          className="mt-2 min-h-11 w-full rounded-lg border border-line-200 text-xs font-semibold text-ink-700 active:bg-canvas"
+        >
+          📷 Escanear QR do professor
+        </button>
         {joinError && <p className="mt-2 text-xs text-danger-600">{joinError}</p>}
+        {scannerOpen && <QrScannerModal onScan={handleScan} onClose={() => setScannerOpen(false)} />}
       </section>
     );
   }
