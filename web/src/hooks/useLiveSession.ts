@@ -13,6 +13,7 @@ interface SessionRow {
   id: string;
   code: string;
   status: 'active' | 'finished';
+  topic: string;
 }
 
 interface ActivityRow {
@@ -90,10 +91,10 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
   const refetchSessionStatus = useCallback(async (sessionId: string) => {
     const { data } = await supabase
       .from('sessions')
-      .select('id, code, status')
+      .select('id, code, status, topic')
       .eq('id', sessionId)
       .maybeSingle<SessionRow>();
-    if (data) setSession({ id: data.id, code: data.code, status: data.status });
+    if (data) setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic });
   }, []);
 
   useEffect(() => {
@@ -135,7 +136,7 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
     try {
       const { data, error } = await supabase
         .from('sessions')
-        .select('id, code, status')
+        .select('id, code, status, topic')
         .eq('code', code)
         .eq('status', 'active')
         .maybeSingle<SessionRow>();
@@ -148,7 +149,7 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
       setActivity(null);
       setContentTrigger(null);
       setAnswered(false);
-      setSession({ id: data.id, code: data.code, status: data.status });
+      setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic });
     } catch {
       setJoinError('Não foi possível entrar na aula. Confira sua conexão e tente novamente.');
     } finally {

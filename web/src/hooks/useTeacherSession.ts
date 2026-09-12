@@ -14,6 +14,7 @@ interface SessionRow {
   id: string;
   code: string;
   status: 'active' | 'finished';
+  topic: string;
   allow_notes: boolean;
   allow_free_chatbot: boolean;
   focus_mode: boolean;
@@ -53,7 +54,7 @@ interface UseTeacherSessionResult {
   sessionConfig: SessionConfig | null;
   activity: LiveActivity | null;
   loading: boolean;
-  startSession: (classId: string, config: SessionConfig) => Promise<void>;
+  startSession: (classId: string, config: SessionConfig, topic: string) => Promise<void>;
   endSession: () => Promise<void>;
   launchActivity: (type: ActivityType, content: ActivityContent) => Promise<void>;
   sendContentTrigger: (type: ContentTriggerType, content: string, accessibilityCaption?: string) => Promise<void>;
@@ -92,7 +93,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
     setLoading(true);
     const { data } = await supabase
       .from('sessions')
-      .select('id, code, status, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode')
+      .select('id, code, status, topic, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode')
       .eq('teacher_id', teacherId)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
@@ -100,7 +101,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
 
     const rows = (data ?? []) as SessionRow[];
     const current = rows[0] ?? null;
-    setSession(current ? { id: current.id, code: current.code, status: current.status } : null);
+    setSession(current ? { id: current.id, code: current.code, status: current.status, topic: current.topic } : null);
     setSessionConfig(current ? configFromRow(current) : null);
     setLoading(false);
   }, [teacherId]);
@@ -148,7 +149,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
   }, [session, refetchActivity]);
 
   const startSession = useCallback(
-    async (classId: string, config: SessionConfig) => {
+    async (classId: string, config: SessionConfig, topic: string) => {
       let code = randomCode();
       for (let attempt = 0; attempt < 5; attempt += 1) {
         const { data: taken } = await supabase
@@ -166,6 +167,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
         teacher_id: teacherId,
         code,
         status: 'active',
+        topic,
         allow_notes: config.allowNotes,
         allow_free_chatbot: config.allowFreeChatbot,
         focus_mode: config.focusMode,

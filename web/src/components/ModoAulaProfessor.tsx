@@ -19,7 +19,7 @@ interface ModoAulaProfessorProps {
   sessionConfig: SessionConfig | null;
   activity: LiveActivity | null;
   tally: AnswerTally;
-  onStartSession: (classId: string, config: SessionConfig) => Promise<void>;
+  onStartSession: (classId: string, config: SessionConfig, topic: string) => Promise<void>;
   onEndSession: () => Promise<void>;
   onLaunchActivity: (type: ActivityType, content: ActivityContent) => Promise<void>;
   onSendContentTrigger: (type: ContentTriggerType, content: string, accessibilityCaption?: string) => Promise<void>;
@@ -67,6 +67,7 @@ export function ModoAulaProfessor({
   const [launching, setLaunching] = useState(false);
   const [ending, setEnding] = useState(false);
   const [config, setConfig] = useState<SessionConfig>(DEFAULT_CONFIG);
+  const [topic, setTopic] = useState('');
   const [triggerFormOpen, setTriggerFormOpen] = useState(false);
   const [triggerType, setTriggerType] = useState<ContentTriggerType>('formula');
   const [triggerContent, setTriggerContent] = useState('');
@@ -79,6 +80,19 @@ export function ModoAulaProfessor({
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
         <p className="mt-1 text-xs text-ink-500">Escolha a turma e inicie a aula.</p>
         {error && <p role="alert" className="mt-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{error}</p>}
+
+        <div className="mt-4 flex flex-col gap-1.5">
+          <label htmlFor="session-topic" className="text-xs font-semibold text-ink-700">
+            Tema da aula
+          </label>
+          <input
+            id="session-topic"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            placeholder="Ex: Frações, Segunda Guerra Mundial..."
+            className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
+          />
+        </div>
 
         <div className="mt-4 rounded-xl border border-line-200 p-4">
           <h3 className="flex items-center gap-1.5 text-xs font-semibold text-ink-700">
@@ -104,12 +118,12 @@ export function ModoAulaProfessor({
             <button
               key={c.id}
               type="button"
-              disabled={startingClassId !== null}
+              disabled={startingClassId !== null || !topic.trim()}
               onClick={async () => {
                 setStartingClassId(c.id);
                 setError(null);
                 try {
-                  await onStartSession(c.id, config);
+                  await onStartSession(c.id, config, topic.trim());
                 } catch {
                   setError('Não foi possível iniciar a aula. Confira sua conexão e tente novamente.');
                 } finally {
@@ -201,6 +215,7 @@ export function ModoAulaProfessor({
           {ending ? 'Encerrando...' : 'Encerrar aula'}
         </button>
       </div>
+      {session.topic && <p className="mt-1 text-sm font-medium text-ink-700">{session.topic}</p>}
       <p className="mt-2 text-3xl font-bold tracking-widest text-brand-600">{session.code}</p>
       <p className="text-xs text-ink-500">Peça pros alunos entrarem com esse código ou escanear o QR.</p>
       <div className="mt-3 flex justify-center rounded-xl bg-white p-4">
