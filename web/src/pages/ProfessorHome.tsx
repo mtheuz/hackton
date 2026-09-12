@@ -17,7 +17,16 @@ export function ProfessorHome() {
   const user = useAuthStore((s) => s.user);
   const teacherId = user?.id ?? '';
 
-  const { classes, session, activity, startSession, endSession, launchActivity } = useTeacherSession(teacherId);
+  const {
+    classes,
+    session,
+    sessionConfig,
+    activity,
+    startSession,
+    endSession,
+    launchActivity,
+    sendContentTrigger,
+  } = useTeacherSession(teacherId);
   const tally = useSessionLiveStats(session?.id ?? null, activity?.id ?? null, optionCountFor(activity));
 
   if (!user) return null;
@@ -38,11 +47,13 @@ export function ProfessorHome() {
         <ModoAulaProfessor
           classes={classes}
           session={session}
+          sessionConfig={sessionConfig}
           activity={activity}
           tally={tally}
           onStartSession={startSession}
           onEndSession={endSession}
           onLaunchActivity={launchActivity}
+          onSendContentTrigger={sendContentTrigger}
         />
       </main>
     </div>
