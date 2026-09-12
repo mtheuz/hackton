@@ -2,7 +2,10 @@ import { useAuthStore } from '../store/useAuthStore';
 import { LogoutButton } from '../components/LogoutButton';
 import { useTeacherSession } from '../hooks/useTeacherSession';
 import { useSessionLiveStats } from '../hooks/useSessionLiveStats';
+import { useDisciplines } from '../hooks/useDisciplines';
 import { ModoAulaProfessor } from '../components/ModoAulaProfessor';
+import { DisciplinaManager } from '../components/DisciplinaManager';
+import { TurmaOverview } from '../components/TurmaOverview';
 import type { LiveActivity, PollContent, QuizContent } from '../types/modoAula';
 
 function optionCountFor(activity: LiveActivity | null): number | null {
@@ -26,8 +29,10 @@ export function ProfessorHome() {
     endSession,
     launchActivity,
     sendContentTrigger,
+    assignDiscipline,
   } = useTeacherSession(teacherId);
   const tally = useSessionLiveStats(session?.id ?? null, activity?.id ?? null, optionCountFor(activity));
+  const { disciplines, createDiscipline, renameDiscipline } = useDisciplines(teacherId);
 
   if (!user) return null;
 
@@ -55,6 +60,12 @@ export function ProfessorHome() {
           onLaunchActivity={launchActivity}
           onSendContentTrigger={sendContentTrigger}
         />
+
+        <DisciplinaManager disciplines={disciplines} onCreate={createDiscipline} onRename={renameDiscipline} />
+
+        {classes.map((c) => (
+          <TurmaOverview key={c.id} classInfo={c} disciplines={disciplines} onAssignDiscipline={assignDiscipline} />
+        ))}
       </main>
     </div>
   );
