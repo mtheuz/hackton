@@ -1,6 +1,6 @@
 # AGENTS.md — Diretrizes para Agentes de IA e Desenvolvedores
 
-> **Projeto**: Foco / Intercepta  
+> **Projeto**: Fokido  
 > **Descrição**: Plataforma web de aprendizagem ativa em sala de aula (Modo Aula) e reconversão de impulsos digitais fora da escola (Intercepta), com Tutor Restrito com IA e Raio-X socioemocional privado.  
 > **Stack Principal**: Go (Backend API) | React + TypeScript (Frontend Web/PWA) | Supabase (Database PostgreSQL, Auth, Realtime & RLS)
 
@@ -8,7 +8,7 @@
 
 ## 1. Visão Geral e Propósito do Produto
 
-O **Foco / Intercepta** é uma plataforma educacional web desenhada para resolver simultaneamente os desafios regulatórios do celular em sala de aula (**Lei 15.100**, **Decreto 12.385**) e os desafios biológicos e comportamentais da distração digital fora da escola.
+O **Fokido** é uma plataforma educacional web desenhada para resolver simultaneamente os desafios regulatórios do celular em sala de aula (**Lei 15.100**, **Decreto 12.385**) e os desafios biológicos e comportamentais da distração digital fora da escola.
 
 ### Os Três Atores e a Regra do Fio Condutor
 - **Aluno**: O celular vira ferramenta de aprendizagem ativa na aula. Fora da escola, recebe missões de 3 a 5 minutos nos momentos de impulso hábito-rede social. Recebe um **Raio-X privado** de desempenho e humor.
@@ -58,7 +58,7 @@ Ao implementar recursos no backend (Go) ou frontend (React), os Agentes de IA e 
 ## 4. Estrutura do Repositório
 
 ```directory
-/foco-intercepta
+/fokido
 ├── api/                   # Backend em Go
 │   ├── cmd/
 │   │   └── server/        # Ponto de entrada (main.go)
@@ -129,7 +129,7 @@ Quando um Agente de IA estiver gerando código neste repositório, DEVE seguir e
 ### C. Regras para o Tutor Restrito (Prompt da IA)
 O prompt do sistema para o serviço do Tutor Restrito em Go deve seguir este modelo rígido:
 ```text
-Você é o Tutor Restrito do Foco/Intercepta, um assistente pedagógico para estudantes do Ensino Fundamental II e Ensino Médio.
+Você é o Tutor Restrito do Fokido, um assistente pedagógico para estudantes do Ensino Fundamental II e Ensino Médio.
 REGRAS INEGOCIÁVEIS:
 1. NUNCA forneça a resposta pronta para a pergunta do aluno.
 2. Responda SEMPRE com uma pergunta orientadora, uma dica conceitual ou uma decomposição do problema em etapas menores.
@@ -152,4 +152,4 @@ REGRAS INEGOCIÁVEIS:
 - **Supabase RLS Tests**: Garantir que as migrations possuem testes de políticas RLS.
 
 ---
-*Documento mantido pelo time de Engenharia e Produto do Foco / Intercepta. Atualizado em 2026.*
+*Documento mantido pelo time de Engenharia e Produto do Fokido. Atualizado em 2026.*

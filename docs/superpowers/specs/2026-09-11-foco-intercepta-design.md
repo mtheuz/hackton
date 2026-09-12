@@ -1,4 +1,4 @@
-# Foco/Intercepta — Design de Implementação (MVP 12h)
+# Fokido — Design de Implementação (MVP 12h)
 
 Data: 2026-09-11
 Status: aprovado pelo usuário em chat, pronto pra plano de implementação.
