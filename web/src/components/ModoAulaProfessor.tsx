@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import GearIcon from '~icons/twemoji/gear';
 import MegaphoneIcon from '~icons/twemoji/megaphone';
@@ -74,6 +74,20 @@ export function ModoAulaProfessor({
   const [triggerContent, setTriggerContent] = useState('');
   const [triggerCaption, setTriggerCaption] = useState('');
   const [sendingTrigger, setSendingTrigger] = useState(false);
+  const [newAnswerNotice, setNewAnswerNotice] = useState(false);
+  const previousAnswerCount = useRef(0);
+
+  const answerCount = tally.kind === 'options' ? tally.counts.reduce((a, b) => a + b, 0) : tally.texts.length;
+
+  useEffect(() => {
+    if (answerCount > previousAnswerCount.current) {
+      setNewAnswerNotice(true);
+      const timer = setTimeout(() => setNewAnswerNotice(false), 3000);
+      previousAnswerCount.current = answerCount;
+      return () => clearTimeout(timer);
+    }
+    previousAnswerCount.current = answerCount;
+  }, [answerCount]);
 
   if (!session) {
     return (
@@ -219,13 +233,23 @@ export function ModoAulaProfessor({
       {session.topic && <p className="mt-1 text-sm font-medium text-ink-700">{session.topic}</p>}
       <p className="mt-2 text-3xl font-bold tracking-widest text-brand-600">{session.code}</p>
       <p className="text-xs text-ink-500">Peça pros alunos entrarem com esse código ou escanear o QR.</p>
-      <div className="mt-3 flex justify-center rounded-xl bg-white p-4">
+      <div className="mt-3 flex justify-center rounded-xl bg-surface p-4">
         <QRCodeSVG value={`${window.location.origin}/aluno?code=${session.code}`} size={192} />
       </div>
 
       {activity && !showLauncher ? (
         <div className="mt-4 rounded-xl border border-line-200 p-4">
-          <p className="text-sm font-medium text-ink-700">{activity.content.question}</p>
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-ink-700">{activity.content.question}</p>
+            {newAnswerNotice && (
+              <span
+                role="status"
+                className="shrink-0 rounded-full bg-success-50 px-2.5 py-1 text-xs font-semibold text-success-600"
+              >
+                Nova resposta!
+              </span>
+            )}
+          </div>
           {tally.kind === 'options' ? (
             <ul className="mt-3 space-y-2">
               {(optionsFromContent(activity.content) ?? []).map((option, index) => {
@@ -365,7 +389,7 @@ export function ModoAulaProfessor({
               id="trigger-type"
               value={triggerType}
               onChange={(e) => setTriggerType(e.target.value as ContentTriggerType)}
-              className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
+              className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
             >
               <option value="formula">Fórmula</option>
               <option value="note">Anotação</option>
@@ -377,7 +401,7 @@ export function ModoAulaProfessor({
               id="trigger-content"
               value={triggerContent}
               onChange={(e) => setTriggerContent(e.target.value)}
-              className="min-h-16 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900"
+              className="min-h-16 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
             />
             {sessionConfig?.accessibilityMode && (
               <>
@@ -388,7 +412,7 @@ export function ModoAulaProfessor({
                   id="trigger-caption"
                   value={triggerCaption}
                   onChange={(e) => setTriggerCaption(e.target.value)}
-                  className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
+                  className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
                 />
               </>
             )}

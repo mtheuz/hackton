@@ -20,6 +20,16 @@ export function EscolaHome() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 p-4 sm:p-6">
+        <section className="mt-6 rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+          <span className="inline-block rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-600">
+            Painel da Escola
+          </span>
+          <h2 className="mt-1 text-base font-bold text-ink-700">Visão agregada da rede</h2>
+          <p className="mt-1 text-xs leading-relaxed text-ink-500">
+            Sinais de bem-estar e engajamento das turmas, sempre agregados e anonimizados.
+          </p>
+        </section>
+
         <SchoolInsights signals={signals} loading={loading} />
       </main>
     </div>

@@ -42,7 +42,7 @@ export function DisciplinaManager({ disciplines, onCreate, onRename }: Disciplin
                   value={editingName}
                   onChange={(e) => setEditingName(e.target.value)}
                   aria-label={`Renomear ${d.name}`}
-                  className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
+                  className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
                 />
                 <button
                   type="button"
@@ -76,7 +76,7 @@ export function DisciplinaManager({ disciplines, onCreate, onRename }: Disciplin
           onChange={(e) => setName(e.target.value)}
           placeholder="Nova disciplina"
           aria-label="Nova disciplina"
-          className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
+          className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
         />
         <button
           type="button"

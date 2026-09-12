@@ -3,6 +3,7 @@ import type { ActivityContent, ContentTrigger, LiveActivity, LiveSession } from 
 import type { SessionConfig } from '../types/modoAula';
 import { useClassTranscription } from '../hooks/useClassTranscription';
 import { QrScannerModal } from './QrScannerModal';
+import CameraIcon from '~icons/twemoji/camera';
 
 function codeFromScan(value: string): string {
   try {
@@ -114,9 +115,10 @@ export function ModoAulaAluno({
         <button
           type="button"
           onClick={() => setScannerOpen(true)}
-          className="mt-2 min-h-11 w-full rounded-lg border border-line-200 text-xs font-semibold text-ink-700 active:bg-canvas"
+          className="mt-2 flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border border-line-200 text-xs font-semibold text-ink-700 active:bg-canvas"
         >
-          📷 Escanear QR do professor
+          <CameraIcon aria-hidden className="h-4 w-4" />
+          Escanear QR do professor
         </button>
         {joinError && <p role="alert" className="mt-2 text-xs text-danger-600">{joinError}</p>}
         {scannerOpen && <QrScannerModal onScan={handleScan} onClose={() => setScannerOpen(false)} />}
@@ -159,7 +161,7 @@ export function ModoAulaAluno({
       {contentTrigger && <TriggerCard trigger={contentTrigger} />}
       <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
-        {sessionConfig?.allowTranscription && <section className="mt-3 rounded-xl border border-line-200 bg-canvas p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-ink-700">Gravar e transcrever aula</p><button type="button" onClick={() => void (transcription.recording ? transcription.stop() : transcription.start())} className="min-h-11 rounded-full bg-brand-600 px-3 text-xs font-semibold text-white">{transcription.recording ? 'Parar' : 'Iniciar'}</button></div>{transcription.unsupported && <p className="mt-2 text-xs text-ink-500">Seu navegador não oferece gravação e transcrição simultâneas.</p>}{transcription.error && <p role="alert" className="mt-2 text-xs text-danger-600">{transcription.error}</p>}{transcription.recording && <p role="status" className="mt-2 text-xs text-brand-600">● Gravando e transcrevendo…</p>}{transcription.transcript && <div className="mt-3 max-h-40 overflow-y-auto rounded-lg bg-surface p-3 text-sm leading-relaxed text-ink-700"><p className="mb-1 text-xs font-semibold text-ink-500">Transcrição</p>{transcription.transcript}</div>}</section>}
+        {sessionConfig?.allowTranscription && <section className="mt-3 rounded-xl border border-line-200 bg-canvas p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-ink-700">Gravar e transcrever aula</p><button type="button" onClick={() => void (transcription.recording ? transcription.stop() : transcription.start())} className="min-h-11 rounded-full bg-brand-600 px-3 text-xs font-semibold text-white">{transcription.recording ? 'Parar' : 'Iniciar'}</button></div><p className="mt-2 text-xs text-ink-500">O áudio fica salvo apenas neste navegador.</p>{transcription.unsupported && <p className="mt-2 text-xs text-ink-500">Seu navegador não oferece gravação e transcrição simultâneas.</p>}{transcription.error && <p role="alert" className="mt-2 text-xs text-danger-600">{transcription.error}</p>}{transcription.recording && <p role="status" className="mt-2 text-xs text-brand-600">● Gravando e transcrevendo…</p>}{transcription.recordingUrl && <a href={transcription.recordingUrl} download="fokido-aula.webm" className="mt-3 inline-flex min-h-11 items-center rounded-full border border-line-200 px-3 text-xs font-semibold text-brand-600">Baixar gravação</a>}{transcription.transcript && <div className="mt-3 max-h-40 overflow-y-auto rounded-lg bg-surface p-3 text-sm leading-relaxed text-ink-700"><p className="mb-1 text-xs font-semibold text-ink-500">Transcrição</p>{transcription.transcript}</div>}</section>}
         <p className="mt-1 text-sm font-medium text-ink-700">{activity.content.question}</p>
         {answerError && <p role="alert" className="mt-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{answerError}</p>}
         {options ? (
@@ -170,7 +172,7 @@ export function ModoAulaAluno({
                 type="button"
                 disabled={submitting}
                 onClick={() => void handleAnswer({ selectedIndex: index })}
-                className="min-h-11 rounded-lg border border-line-200 px-3 py-2 text-left text-sm transition-colors active:bg-canvas disabled:opacity-50"
+                className="min-h-11 rounded-lg border border-line-200 bg-surface px-3 py-2 text-left text-sm text-ink-900 transition-colors active:bg-canvas disabled:opacity-50"
               >
                 {option}
               </button>

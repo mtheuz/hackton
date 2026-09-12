@@ -26,7 +26,7 @@ export function TurmaOverview({ classInfo, disciplines, onAssignDiscipline }: Tu
         id={`discipline-${classInfo.id}`}
         value={classInfo.disciplineId ?? ''}
         onChange={(e) => void onAssignDiscipline(classInfo.id, e.target.value)}
-        className="min-h-11 w-full rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
+        className="min-h-11 w-full rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
       >
         <option value="" disabled>
           Selecione...

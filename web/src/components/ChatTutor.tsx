@@ -68,7 +68,7 @@ export function ChatTutor({ activityId, onClose }: ChatTutorProps) {
             onChange={(e) => setQuestion(e.target.value)}
             placeholder="Sua pergunta..."
             aria-label="Sua pergunta"
-            className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
+            className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
           />
           <button
             type="submit"

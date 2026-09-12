@@ -79,7 +79,7 @@ export function QrScannerModal({ onScan, onClose }: QrScannerModalProps) {
       <button
         type="button"
         onClick={onClose}
-        className="mt-6 min-h-11 rounded-full bg-white px-6 text-sm font-semibold text-ink-900"
+        className="mt-6 min-h-11 rounded-full bg-surface px-6 text-sm font-semibold text-ink-900"
       >
         Cancelar
       </button>

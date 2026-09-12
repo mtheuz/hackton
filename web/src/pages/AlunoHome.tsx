@@ -17,6 +17,7 @@ import { ChatTutor } from '../components/ChatTutor';
 import { AlunoTabBar, type AlunoTab } from '../components/AlunoTabBar';
 import EmptyProgressIcon from '~icons/streamline-ultimate-color/picture-sun';
 import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
+import GraduationCapIcon from '~icons/twemoji/graduation-cap';
 
 export function AlunoHome() {
   const user = useAuthStore((s) => s.user);
@@ -173,7 +174,8 @@ export function AlunoHome() {
           onClick={() => setTutorOpen(true)}
           className="fixed bottom-24 right-4 z-10 flex min-h-11 items-center gap-1.5 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white shadow-lg active:bg-brand-800"
         >
-          🎓 Tutor
+          <GraduationCapIcon aria-hidden className="h-4 w-4" />
+          Tutor
         </button>
       )}
       {tutorOpen && tutorActivityId && (
