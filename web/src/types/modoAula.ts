@@ -47,3 +47,20 @@ export interface TextTally {
 }
 
 export type AnswerTally = OptionTally | TextTally;
+
+export interface SessionConfig {
+  allowNotes: boolean;
+  allowFreeChatbot: boolean;
+  focusMode: boolean;
+  quizAtEnd: boolean;
+  accessibilityMode: boolean;
+}
+
+export type ContentTriggerType = 'formula' | 'note';
+
+export interface ContentTrigger {
+  id: string;
+  type: ContentTriggerType;
+  content: string;
+  accessibilityCaption: string | null;
+}
