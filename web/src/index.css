@@ -1,26 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  --color-brand-50: #eef5fb;
-  --color-brand-100: #d7e8f5;
-  --color-brand-500: #1373bb;
-  --color-brand-600: #0e5a96;
-  --color-brand-700: #0b4878;
-  --color-brand-800: #0a4370;
+  /* DESIGN.md — roxo como cor de destaque */
+  --color-brand-50: #f1edff;
+  --color-brand-100: #e4daff;
+  --color-brand-500: #a78bfa;
+  --color-brand-600: #7c5cfc;
+  --color-brand-700: #6d4ee8;
+  --color-brand-800: #5a3fc4;
 
-  --color-ink-900: #201f1c;
-  --color-ink-700: #31302e;
-  --color-ink-500: #615d59;
-  --color-ink-300: #a39e98;
+  --color-ink-900: #20202a;
+  --color-ink-700: #20202a;
+  --color-ink-500: #777783;
+  --color-ink-300: #a0a0aa;
 
-  --color-line-200: #e6e6e6;
-  --color-canvas: #f6f5f4;
+  --color-line-200: #ececf2;
+  --color-canvas: #f8f8fc;
   --color-surface: #ffffff;
 
-  --color-success-50: #eafbf2;
-  --color-success-600: #1a8f56;
-  --color-danger-50: #fdecec;
-  --color-danger-600: #c8303f;
+  --color-success-50: #eaf9f2;
+  --color-success-600: #45c98b;
+  --color-warning-50: #fff5e5;
+  --color-warning-600: #ffb84d;
+  --color-danger-50: #fff0f3;
+  --color-danger-600: #ff647c;
+  --color-info-50: #eef5ff;
+  --color-info-600: #5c9dfc;
 
   --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
