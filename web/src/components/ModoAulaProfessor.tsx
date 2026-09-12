@@ -3,33 +3,55 @@ import type {
   ActivityContent,
   ActivityType,
   AnswerTally,
+  ContentTriggerType,
   LiveActivity,
   LiveSession,
+  SessionConfig,
   TeacherClass,
 } from '../types/modoAula';
 
 interface ModoAulaProfessorProps {
   classes: TeacherClass[];
   session: LiveSession | null;
+  sessionConfig: SessionConfig | null;
   activity: LiveActivity | null;
   tally: AnswerTally;
-  onStartSession: (classId: string) => Promise<void>;
+  onStartSession: (classId: string, config: SessionConfig) => Promise<void>;
   onEndSession: () => Promise<void>;
   onLaunchActivity: (type: ActivityType, content: ActivityContent) => Promise<void>;
+  onSendContentTrigger: (type: ContentTriggerType, content: string, accessibilityCaption?: string) => Promise<void>;
 }
 
 function optionsFromContent(content: ActivityContent): string[] | null {
   return 'options' in content ? content.options : null;
 }
 
+const CONFIG_TOGGLES: { key: keyof SessionConfig; label: string }[] = [
+  { key: 'allowNotes', label: 'Permitir anotações' },
+  { key: 'allowFreeChatbot', label: 'Permitir chatbot livre' },
+  { key: 'focusMode', label: 'Modo foco' },
+  { key: 'quizAtEnd', label: 'Quiz ao final' },
+  { key: 'accessibilityMode', label: 'Modo acessibilidade' },
+];
+
+const DEFAULT_CONFIG: SessionConfig = {
+  allowNotes: false,
+  allowFreeChatbot: false,
+  focusMode: false,
+  quizAtEnd: false,
+  accessibilityMode: false,
+};
+
 export function ModoAulaProfessor({
   classes,
   session,
+  sessionConfig,
   activity,
   tally,
   onStartSession,
   onEndSession,
   onLaunchActivity,
+  onSendContentTrigger,
 }: ModoAulaProfessorProps) {
   const [type, setType] = useState<ActivityType>('quiz');
   const [question, setQuestion] = useState('');
@@ -39,12 +61,31 @@ export function ModoAulaProfessor({
   const [startingClassId, setStartingClassId] = useState<string | null>(null);
   const [launching, setLaunching] = useState(false);
   const [ending, setEnding] = useState(false);
+  const [config, setConfig] = useState<SessionConfig>(DEFAULT_CONFIG);
+  const [triggerType, setTriggerType] = useState<ContentTriggerType>('formula');
+  const [triggerContent, setTriggerContent] = useState('');
+  const [triggerCaption, setTriggerCaption] = useState('');
+  const [sendingTrigger, setSendingTrigger] = useState(false);
 
   if (!session) {
     return (
       <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
         <p className="mt-1 text-xs text-ink-500">Escolha a turma e inicie a aula.</p>
+
+        <div className="mt-3 flex flex-col gap-2">
+          {CONFIG_TOGGLES.map((toggle) => (
+            <label key={toggle.key} className="flex items-center gap-2 text-sm text-ink-700">
+              <input
+                type="checkbox"
+                checked={config[toggle.key]}
+                onChange={(e) => setConfig({ ...config, [toggle.key]: e.target.checked })}
+              />
+              {toggle.label}
+            </label>
+          ))}
+        </div>
+
         <div className="mt-3 flex flex-col gap-2">
           {classes.map((c) => (
             <button
@@ -54,7 +95,7 @@ export function ModoAulaProfessor({
               onClick={async () => {
                 setStartingClassId(c.id);
                 try {
-                  await onStartSession(c.id);
+                  await onStartSession(c.id, config);
                 } finally {
                   setStartingClassId(null);
                 }
@@ -101,6 +142,18 @@ export function ModoAulaProfessor({
     }
   }
 
+  async function handleSendTrigger() {
+    setSendingTrigger(true);
+    try {
+      const caption = sessionConfig?.accessibilityMode ? triggerCaption.trim() || undefined : undefined;
+      await onSendContentTrigger(triggerType, triggerContent.trim(), caption);
+      setTriggerContent('');
+      setTriggerCaption('');
+    } finally {
+      setSendingTrigger(false);
+    }
+  }
+
   const needsOptions = type === 'quiz' || type === 'poll';
 
   return (
@@ -118,6 +171,52 @@ export function ModoAulaProfessor({
       </div>
       <p className="mt-2 text-3xl font-bold tracking-widest text-brand-600">{session.code}</p>
       <p className="text-xs text-ink-500">Peça pros alunos entrarem com esse código.</p>
+
+      <div className="mt-4 flex flex-col gap-2 rounded-xl border border-line-200 p-4">
+        <h3 className="text-xs font-semibold text-ink-700">Enviar gatilho de conteúdo</h3>
+        <label htmlFor="trigger-type" className="text-xs font-semibold text-ink-700">
+          Tipo
+        </label>
+        <select
+          id="trigger-type"
+          value={triggerType}
+          onChange={(e) => setTriggerType(e.target.value as ContentTriggerType)}
+          className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
+        >
+          <option value="formula">Fórmula</option>
+          <option value="note">Anotação</option>
+        </select>
+        <label htmlFor="trigger-content" className="text-xs font-semibold text-ink-700">
+          Conteúdo
+        </label>
+        <textarea
+          id="trigger-content"
+          value={triggerContent}
+          onChange={(e) => setTriggerContent(e.target.value)}
+          className="min-h-16 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900"
+        />
+        {sessionConfig?.accessibilityMode && (
+          <>
+            <label htmlFor="trigger-caption" className="text-xs font-semibold text-ink-700">
+              Legenda de acessibilidade
+            </label>
+            <input
+              id="trigger-caption"
+              value={triggerCaption}
+              onChange={(e) => setTriggerCaption(e.target.value)}
+              className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900"
+            />
+          </>
+        )}
+        <button
+          type="button"
+          disabled={sendingTrigger || triggerContent.trim().length === 0}
+          onClick={() => void handleSendTrigger()}
+          className="mt-1 min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
+        >
+          {sendingTrigger ? 'Enviando...' : 'Enviar gatilho'}
+        </button>
+      </div>
 
       {activity && !showLauncher ? (
         <div className="mt-4 rounded-xl border border-line-200 p-4">

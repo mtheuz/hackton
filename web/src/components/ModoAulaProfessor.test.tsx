@@ -1,24 +1,57 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ModoAulaProfessor } from './ModoAulaProfessor';
+import type { SessionConfig } from '../types/modoAula';
+
+const NO_CONFIG: SessionConfig = {
+  allowNotes: false,
+  allowFreeChatbot: false,
+  focusMode: false,
+  quizAtEnd: false,
+  accessibilityMode: false,
+};
 
 describe('ModoAulaProfessor', () => {
-  it('lets the teacher start a session for a class', () => {
+  it('lets the teacher start a session with the default config', () => {
     const onStartSession = vi.fn().mockResolvedValue(undefined);
     render(
       <ModoAulaProfessor
         classes={[{ id: 'class-1', name: 'Turma Demo' }]}
         session={null}
+        sessionConfig={null}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
         onStartSession={onStartSession}
         onEndSession={vi.fn()}
         onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
       />,
     );
 
     fireEvent.click(screen.getByText('Iniciar Modo Aula · Turma Demo'));
-    expect(onStartSession).toHaveBeenCalledWith('class-1');
+    expect(onStartSession).toHaveBeenCalledWith('class-1', NO_CONFIG);
+  });
+
+  it('includes checked toggles in the session config', () => {
+    const onStartSession = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ModoAulaProfessor
+        classes={[{ id: 'class-1', name: 'Turma Demo' }]}
+        session={null}
+        sessionConfig={null}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={onStartSession}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText('Modo acessibilidade'));
+    fireEvent.click(screen.getByText('Iniciar Modo Aula · Turma Demo'));
+
+    expect(onStartSession).toHaveBeenCalledWith('class-1', { ...NO_CONFIG, accessibilityMode: true });
   });
 
   it('launches a quiz with the filled question and options', () => {
@@ -27,11 +60,13 @@ describe('ModoAulaProfessor', () => {
       <ModoAulaProfessor
         classes={[]}
         session={{ id: 'session-1', code: '1234', status: 'active' }}
+        sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
         onStartSession={vi.fn()}
         onEndSession={vi.fn()}
         onLaunchActivity={onLaunchActivity}
+        onSendContentTrigger={vi.fn()}
       />,
     );
 
@@ -52,6 +87,7 @@ describe('ModoAulaProfessor', () => {
       <ModoAulaProfessor
         classes={[]}
         session={{ id: 'session-1', code: '1234', status: 'active' }}
+        sessionConfig={NO_CONFIG}
         activity={{
           id: 'activity-1',
           type: 'quiz',
@@ -61,10 +97,64 @@ describe('ModoAulaProfessor', () => {
         onStartSession={vi.fn()}
         onEndSession={vi.fn()}
         onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
       />,
     );
 
     expect(screen.getByText('1 (25%)')).toBeInTheDocument();
     expect(screen.getByText('3 (75%)')).toBeInTheDocument();
+  });
+
+  it('sends a content trigger without a caption when accessibility mode is off', () => {
+    const onSendContentTrigger = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={onSendContentTrigger}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Legenda de acessibilidade')).not.toBeInTheDocument();
+
+    fireEvent.change(screen.getByLabelText('Conteúdo'), { target: { value: 'E = mc²' } });
+    fireEvent.click(screen.getByText('Enviar gatilho'));
+
+    expect(onSendContentTrigger).toHaveBeenCalledWith('formula', 'E = mc²', undefined);
+  });
+
+  it('sends a content trigger with a caption when accessibility mode is on', () => {
+    const onSendContentTrigger = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        sessionConfig={{ ...NO_CONFIG, accessibilityMode: true }}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={onSendContentTrigger}
+      />,
+    );
+
+    fireEvent.change(screen.getByLabelText('Conteúdo'), { target: { value: 'E = mc²' } });
+    fireEvent.change(screen.getByLabelText('Legenda de acessibilidade'), {
+      target: { value: 'Energia igual massa vezes velocidade da luz ao quadrado' },
+    });
+    fireEvent.click(screen.getByText('Enviar gatilho'));
+
+    expect(onSendContentTrigger).toHaveBeenCalledWith(
+      'formula',
+      'E = mc²',
+      'Energia igual massa vezes velocidade da luz ao quadrado',
+    );
   });
 });
