@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { LogoutButton } from '../components/LogoutButton';
 import { useTeacherSession } from '../hooks/useTeacherSession';
@@ -6,6 +7,7 @@ import { useDisciplines } from '../hooks/useDisciplines';
 import { ModoAulaProfessor } from '../components/ModoAulaProfessor';
 import { DisciplinaManager } from '../components/DisciplinaManager';
 import { TurmaOverview } from '../components/TurmaOverview';
+import { ProfessorTabBar, type ProfessorTab } from '../components/ProfessorTabBar';
 import type { LiveActivity, PollContent, QuizContent } from '../types/modoAula';
 
 function optionCountFor(activity: LiveActivity | null): number | null {
@@ -34,6 +36,8 @@ export function ProfessorHome() {
   const tally = useSessionLiveStats(session?.id ?? null, activity?.id ?? null, optionCountFor(activity));
   const { disciplines, createDiscipline, renameDiscipline } = useDisciplines(teacherId);
 
+  const [tab, setTab] = useState<ProfessorTab>('aula');
+
   if (!user) return null;
 
   return (
@@ -48,25 +52,38 @@ export function ProfessorHome() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-4 p-4 sm:p-6">
-        <ModoAulaProfessor
-          classes={classes}
-          session={session}
-          sessionConfig={sessionConfig}
-          activity={activity}
-          tally={tally}
-          onStartSession={startSession}
-          onEndSession={endSession}
-          onLaunchActivity={launchActivity}
-          onSendContentTrigger={sendContentTrigger}
-        />
+      <main className="mx-auto max-w-md space-y-4 p-4 pb-24 sm:p-6">
+        {tab === 'aula' && (
+          <ModoAulaProfessor
+            classes={classes}
+            session={session}
+            sessionConfig={sessionConfig}
+            activity={activity}
+            tally={tally}
+            onStartSession={startSession}
+            onEndSession={endSession}
+            onLaunchActivity={launchActivity}
+            onSendContentTrigger={sendContentTrigger}
+          />
+        )}
 
-        <DisciplinaManager disciplines={disciplines} onCreate={createDiscipline} onRename={renameDiscipline} />
+        {tab === 'turmas' && (
+          <>
+            <DisciplinaManager disciplines={disciplines} onCreate={createDiscipline} onRename={renameDiscipline} />
 
-        {classes.map((c) => (
-          <TurmaOverview key={c.id} classInfo={c} disciplines={disciplines} onAssignDiscipline={assignDiscipline} />
-        ))}
+            {classes.map((c) => (
+              <TurmaOverview
+                key={c.id}
+                classInfo={c}
+                disciplines={disciplines}
+                onAssignDiscipline={assignDiscipline}
+              />
+            ))}
+          </>
+        )}
       </main>
+
+      <ProfessorTabBar active={tab} onChange={setTab} />
     </div>
   );
 }
