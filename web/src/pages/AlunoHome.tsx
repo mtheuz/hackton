@@ -4,6 +4,7 @@ import { useDomainProgress } from '../hooks/useDomainProgress';
 import { useMoodCheckins } from '../hooks/useMoodCheckins';
 import { InterceptaCard } from '../components/InterceptaCard';
 import { CheckinHumor } from '../components/CheckinHumor';
+import { LogoutButton } from '../components/LogoutButton';
 
 export function AlunoHome() {
   const user = useAuthStore((s) => s.user);
@@ -23,9 +24,12 @@ export function AlunoHome() {
             <p className="text-xs text-ink-500">Olá,</p>
             <h1 className="text-base font-semibold text-ink-700">{user.name}</h1>
           </div>
-          <div className="flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5">
-            <span aria-hidden className="text-sm">🔄</span>
-            <span className="text-xs font-semibold text-brand-600">{completedCount}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5">
+              <span aria-hidden className="text-sm">🔄</span>
+              <span className="text-xs font-semibold text-brand-600">{completedCount}</span>
+            </div>
+            <LogoutButton />
           </div>
         </div>
       </header>

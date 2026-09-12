@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import type { PendingMission } from '../types/intercepta';
 
 interface InterceptaCardProps {
@@ -11,15 +11,15 @@ interface InterceptaCardProps {
 const FEEDBACK_DISPLAY_MS = 2200;
 
 export function InterceptaCard({ mission: incomingMission, completedCount, onAnswer, onSimulateImpulse }: InterceptaCardProps) {
+  const [frozenMission, setFrozenMission] = useState<PendingMission | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const frozenMissionRef = useRef<PendingMission | null>(null);
 
-  const displayedMission = showFeedback ? frozenMissionRef.current : incomingMission;
+  const displayedMission = showFeedback ? frozenMission : incomingMission;
 
   async function handleAnswer(index: number) {
-    frozenMissionRef.current = incomingMission;
+    setFrozenMission(incomingMission);
     setSelectedIndex(index);
     setShowFeedback(true);
     setSubmitting(true);
