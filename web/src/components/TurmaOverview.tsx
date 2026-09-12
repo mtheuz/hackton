@@ -1,3 +1,4 @@
+import BarChartIcon from '~icons/twemoji/bar-chart';
 import { useClassOverview } from '../hooks/useClassOverview';
 import type { Discipline } from '../types/disciplina';
 import type { TeacherClass } from '../types/modoAula';
@@ -35,22 +36,28 @@ export function TurmaOverview({ classInfo, disciplines, onAssignDiscipline }: Tu
       </select>
 
       {!loading && (
-        <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
-          <div>
-            <dt className="text-[11px] text-ink-500">Sessões</dt>
-            <dd className="text-sm font-semibold text-ink-700">{overview.sessionCount}</dd>
-          </div>
-          <div>
-            <dt className="text-[11px] text-ink-500">Alunos</dt>
-            <dd className="text-sm font-semibold text-ink-700">{overview.participantCount}</dd>
-          </div>
-          <div>
-            <dt className="text-[11px] text-ink-500">Acerto quiz</dt>
-            <dd className="text-sm font-semibold text-ink-700">
-              {overview.quizAccuracy === null ? '—' : `${overview.quizAccuracy}%`}
-            </dd>
-          </div>
-        </dl>
+        <>
+          <h3 className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-ink-700">
+            <BarChartIcon aria-hidden className="h-4 w-4" />
+            Desempenho
+          </h3>
+          <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <dt className="text-[11px] text-ink-500">Sessões</dt>
+              <dd className="text-sm font-semibold text-ink-700">{overview.sessionCount}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-ink-500">Alunos</dt>
+              <dd className="text-sm font-semibold text-ink-700">{overview.participantCount}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-ink-500">Acerto quiz</dt>
+              <dd className="text-sm font-semibold text-ink-700">
+                {overview.quizAccuracy === null ? '—' : `${overview.quizAccuracy}%`}
+              </dd>
+            </div>
+          </dl>
+        </>
       )}
     </section>
   );
