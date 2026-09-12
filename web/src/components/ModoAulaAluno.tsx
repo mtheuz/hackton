@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import type { ActivityContent, LiveActivity, LiveSession } from '../types/modoAula';
+import type { ActivityContent, ContentTrigger, LiveActivity, LiveSession } from '../types/modoAula';
 
 interface ModoAulaAlunoProps {
   session: LiveSession | null;
   activity: LiveActivity | null;
+  contentTrigger: ContentTrigger | null;
   answered: boolean;
   joining: boolean;
   joinError: string | null;
@@ -16,9 +17,24 @@ function optionsFromContent(content: ActivityContent): string[] | null {
   return 'options' in content ? content.options : null;
 }
 
+function TriggerCard({ trigger }: { trigger: ContentTrigger }) {
+  return (
+    <section className="rounded-2xl border border-brand-500 bg-brand-50 p-5 shadow-sm">
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-brand-600">
+        {trigger.type === 'formula' ? 'Fórmula' : 'Anotação'} do professor
+      </h2>
+      <p className="mt-1 whitespace-pre-wrap text-sm font-medium text-ink-700">{trigger.content}</p>
+      {trigger.accessibilityCaption && (
+        <p className="mt-2 text-xs italic text-ink-500">{trigger.accessibilityCaption}</p>
+      )}
+    </section>
+  );
+}
+
 export function ModoAulaAluno({
   session,
   activity,
+  contentTrigger,
   answered,
   joining,
   joinError,
@@ -71,63 +87,72 @@ export function ModoAulaAluno({
 
   if (!activity) {
     return (
-      <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
-        <p className="mt-1 text-xs text-ink-500">Aguardando o professor iniciar uma atividade...</p>
-        <button type="button" onClick={onLeave} className="mt-3 text-xs font-semibold text-ink-500">
-          Sair
-        </button>
-      </section>
+      <div className="space-y-4">
+        {contentTrigger && <TriggerCard trigger={contentTrigger} />}
+        <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
+          <p className="mt-1 text-xs text-ink-500">Aguardando o professor iniciar uma atividade...</p>
+          <button type="button" onClick={onLeave} className="mt-3 text-xs font-semibold text-ink-500">
+            Sair
+          </button>
+        </section>
+      </div>
     );
   }
 
   if (answered) {
     return (
-      <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
-        <p className="mt-1 text-xs text-success-600">Resposta enviada! Aguardando o professor.</p>
-      </section>
+      <div className="space-y-4">
+        {contentTrigger && <TriggerCard trigger={contentTrigger} />}
+        <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+          <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
+          <p className="mt-1 text-xs text-success-600">Resposta enviada! Aguardando o professor.</p>
+        </section>
+      </div>
     );
   }
 
   const options = optionsFromContent(activity.content);
 
   return (
-    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
-      <p className="mt-1 text-sm font-medium text-ink-700">{activity.content.question}</p>
-      {options ? (
-        <div className="mt-3 flex flex-col gap-2">
-          {options.map((option, index) => (
-            <button
-              key={option}
-              type="button"
+    <div className="space-y-4">
+      {contentTrigger && <TriggerCard trigger={contentTrigger} />}
+      <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+        <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
+        <p className="mt-1 text-sm font-medium text-ink-700">{activity.content.question}</p>
+        {options ? (
+          <div className="mt-3 flex flex-col gap-2">
+            {options.map((option, index) => (
+              <button
+                key={option}
+                type="button"
+                disabled={submitting}
+                onClick={() => void handleAnswer({ selectedIndex: index })}
+                className="min-h-11 rounded-lg border border-line-200 px-3 py-2 text-left text-sm transition-colors active:bg-canvas disabled:opacity-50"
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-3 flex flex-col gap-2">
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
               disabled={submitting}
-              onClick={() => void handleAnswer({ selectedIndex: index })}
-              className="min-h-11 rounded-lg border border-line-200 px-3 py-2 text-left text-sm transition-colors active:bg-canvas disabled:opacity-50"
+              className="min-h-20 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20 disabled:opacity-50"
+            />
+            <button
+              type="button"
+              disabled={submitting || text.trim().length === 0}
+              onClick={() => void handleAnswer({ text: text.trim() })}
+              className="min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
             >
-              {option}
+              {submitting ? 'Enviando...' : 'Enviar'}
             </button>
-          ))}
-        </div>
-      ) : (
-        <div className="mt-3 flex flex-col gap-2">
-          <textarea
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            disabled={submitting}
-            className="min-h-20 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20 disabled:opacity-50"
-          />
-          <button
-            type="button"
-            disabled={submitting || text.trim().length === 0}
-            onClick={() => void handleAnswer({ text: text.trim() })}
-            className="min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
-          >
-            {submitting ? 'Enviando...' : 'Enviar'}
-          </button>
-        </div>
-      )}
-    </section>
+          </div>
+        )}
+      </section>
+    </div>
   );
 }
