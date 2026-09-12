@@ -1,0 +1,90 @@
+import { describe, expect, it, vi } from 'vitest';
+import { renderHook, waitFor, act } from '@testing-library/react';
+import { useTeacherSession } from './useTeacherSession';
+
+function chainable(result: { data: unknown; error: unknown }) {
+  const builder: Record<string, unknown> = {
+    select: vi.fn(() => builder),
+    eq: vi.fn(() => builder),
+    order: vi.fn(() => builder),
+    limit: vi.fn(() => builder),
+    insert: vi.fn(() => builder),
+    update: vi.fn(() => builder),
+    maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    then: (resolve: (v: typeof result) => void) => resolve(result),
+  };
+  return builder;
+}
+
+const classesBuilder = chainable({ data: [{ id: 'class-1', name: 'Turma Demo' }], error: null });
+const sessionsBuilder = chainable({ data: [{ id: 'session-1', code: '1234', status: 'active' }], error: null });
+const activitiesBuilder = chainable({
+  data: [
+    {
+      id: 'activity-1',
+      type: 'quiz',
+      content_json: { question: 'Q?', options: ['A', 'B'], correct_index: 0 },
+    },
+  ],
+  error: null,
+});
+
+const fromMock = vi.fn((table: string) => {
+  switch (table) {
+    case 'classes':
+      return classesBuilder;
+    case 'sessions':
+      return sessionsBuilder;
+    case 'activities':
+      return activitiesBuilder;
+    default:
+      throw new Error(`unexpected table ${table}`);
+  }
+});
+
+const channelMock = { on: vi.fn().mockReturnThis(), subscribe: vi.fn().mockReturnThis() };
+
+vi.mock('../services/supabaseClient', () => ({
+  supabase: {
+    from: (table: string) => fromMock(table),
+    channel: vi.fn(() => channelMock),
+    removeChannel: vi.fn(),
+  },
+}));
+
+describe('useTeacherSession', () => {
+  it('starts a session with a 4-digit code for the chosen class', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.startSession('class-1');
+    });
+
+    expect(sessionsBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ class_id: 'class-1', teacher_id: 'teacher-1', status: 'active' }),
+    );
+    const insertedPayload = (sessionsBuilder.insert as ReturnType<typeof vi.fn>).mock.calls[0][0] as { code: string };
+    expect(insertedPayload.code).toMatch(/^\d{4}$/);
+  });
+
+  it('launches an activity and exposes it as the current one', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() => expect(result.current.session?.id).toBe('session-1'));
+
+    await act(async () => {
+      await result.current.launchActivity('quiz', { question: 'Q?', options: ['A', 'B'], correct_index: 0 });
+    });
+
+    expect(activitiesBuilder.insert).toHaveBeenCalledWith({
+      session_id: 'session-1',
+      type: 'quiz',
+      content_json: { question: 'Q?', options: ['A', 'B'], correct_index: 0 },
+    });
+    expect(result.current.activity).toEqual({
+      id: 'activity-1',
+      type: 'quiz',
+      content: { question: 'Q?', options: ['A', 'B'], correct_index: 0 },
+    });
+  });
+});
