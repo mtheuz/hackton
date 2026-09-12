@@ -34,6 +34,7 @@ export interface LiveSession {
 export interface TeacherClass {
   id: string;
   name: string;
+  disciplineId?: string | null;
 }
 
 export interface OptionTally {
