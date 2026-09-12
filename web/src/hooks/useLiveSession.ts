@@ -14,6 +14,12 @@ interface SessionRow {
   code: string;
   status: 'active' | 'finished';
   topic: string;
+  allow_notes: boolean;
+  allow_free_chatbot: boolean;
+  focus_mode: boolean;
+  quiz_at_end: boolean;
+  accessibility_mode: boolean;
+  allow_transcription: boolean;
 }
 
 interface ActivityRow {
@@ -33,6 +39,7 @@ interface UseLiveSessionResult {
   session: LiveSession | null;
   activity: LiveActivity | null;
   contentTrigger: ContentTrigger | null;
+  sessionConfig: import('../types/modoAula').SessionConfig | null;
   answered: boolean;
   joining: boolean;
   joinError: string | null;
@@ -45,6 +52,7 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
   const [session, setSession] = useState<LiveSession | null>(null);
   const [activity, setActivity] = useState<LiveActivity | null>(null);
   const [contentTrigger, setContentTrigger] = useState<ContentTrigger | null>(null);
+  const [sessionConfig, setSessionConfig] = useState<import('../types/modoAula').SessionConfig | null>(null);
   const [answered, setAnswered] = useState(false);
   const [joining, setJoining] = useState(false);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -91,10 +99,10 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
   const refetchSessionStatus = useCallback(async (sessionId: string) => {
     const { data } = await supabase
       .from('sessions')
-      .select('id, code, status, topic')
+      .select('id, code, status, topic, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
       .eq('id', sessionId)
       .maybeSingle<SessionRow>();
-    if (data) setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic });
+    if (data) { setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic }); setSessionConfig({ allowNotes: data.allow_notes, allowFreeChatbot: data.allow_free_chatbot, focusMode: data.focus_mode, quizAtEnd: data.quiz_at_end, accessibilityMode: data.accessibility_mode, allowTranscription: data.allow_transcription }); }
   }, []);
 
   useEffect(() => {
@@ -136,7 +144,7 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
     try {
       const { data, error } = await supabase
         .from('sessions')
-        .select('id, code, status, topic')
+        .select('id, code, status, topic, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
         .eq('code', code)
         .eq('status', 'active')
         .maybeSingle<SessionRow>();
@@ -149,6 +157,7 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
       setActivity(null);
       setContentTrigger(null);
       setAnswered(false);
+      setSessionConfig({ allowNotes: data.allow_notes, allowFreeChatbot: data.allow_free_chatbot, focusMode: data.focus_mode, quizAtEnd: data.quiz_at_end, accessibilityMode: data.accessibility_mode, allowTranscription: data.allow_transcription });
       setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic });
     } catch {
       setJoinError('Não foi possível entrar na aula. Confira sua conexão e tente novamente.');
@@ -184,7 +193,8 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
     setContentTrigger(null);
     setAnswered(false);
     setJoinError(null);
+    setSessionConfig(null);
   }, []);
 
-  return { session, activity, contentTrigger, answered, joining, joinError, join, submitAnswer, leave };
+  return { session, activity, contentTrigger, sessionConfig, answered, joining, joinError, join, submitAnswer, leave };
 }

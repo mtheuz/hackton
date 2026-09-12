@@ -35,6 +35,7 @@ const CONFIG_TOGGLES: { key: keyof SessionConfig; label: string }[] = [
   { key: 'focusMode', label: 'Modo foco' },
   { key: 'quizAtEnd', label: 'Quiz ao final' },
   { key: 'accessibilityMode', label: 'Modo acessibilidade' },
+  { key: 'allowTranscription', label: 'Permitir gravação e transcrição' },
 ];
 
 const DEFAULT_CONFIG: SessionConfig = {

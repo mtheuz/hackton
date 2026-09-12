@@ -20,6 +20,7 @@ interface SessionRow {
   focus_mode: boolean;
   quiz_at_end: boolean;
   accessibility_mode: boolean;
+  allow_transcription: boolean;
 }
 
 interface ActivityRow {
@@ -45,6 +46,7 @@ function configFromRow(row: SessionRow): SessionConfig {
     focusMode: row.focus_mode,
     quizAtEnd: row.quiz_at_end,
     accessibilityMode: row.accessibility_mode,
+    allowTranscription: row.allow_transcription,
   };
 }
 
@@ -93,7 +95,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
     setLoading(true);
     const { data } = await supabase
       .from('sessions')
-      .select('id, code, status, topic, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode')
+      .select('id, code, status, topic, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
       .eq('teacher_id', teacherId)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
@@ -173,6 +175,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
         focus_mode: config.focusMode,
         quiz_at_end: config.quizAtEnd,
         accessibility_mode: config.accessibilityMode,
+        allow_transcription: config.allowTranscription ?? false,
       });
       if (error) throw error;
       await refetchSession();

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import type { ActivityContent, ContentTrigger, LiveActivity, LiveSession } from '../types/modoAula';
+import type { SessionConfig } from '../types/modoAula';
+import { useClassTranscription } from '../hooks/useClassTranscription';
 import { QrScannerModal } from './QrScannerModal';
 
 function codeFromScan(value: string): string {
@@ -14,6 +16,7 @@ interface ModoAulaAlunoProps {
   session: LiveSession | null;
   activity: LiveActivity | null;
   contentTrigger: ContentTrigger | null;
+  sessionConfig?: SessionConfig | null;
   answered: boolean;
   joining: boolean;
   joinError: string | null;
@@ -45,6 +48,7 @@ export function ModoAulaAluno({
   session,
   activity,
   contentTrigger,
+  sessionConfig,
   answered,
   joining,
   joinError,
@@ -58,6 +62,7 @@ export function ModoAulaAluno({
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const transcription = useClassTranscription(Boolean(sessionConfig?.allowTranscription));
 
   async function handleAnswer(payload: { selectedIndex?: number; text?: string }) {
     setAnswerError(null);
@@ -154,6 +159,7 @@ export function ModoAulaAluno({
       {contentTrigger && <TriggerCard trigger={contentTrigger} />}
       <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
+        {sessionConfig?.allowTranscription && <section className="mt-3 rounded-xl border border-line-200 bg-canvas p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-ink-700">Gravar e transcrever aula</p><button type="button" onClick={() => void (transcription.recording ? transcription.stop() : transcription.start())} className="min-h-11 rounded-full bg-brand-600 px-3 text-xs font-semibold text-white">{transcription.recording ? 'Parar' : 'Iniciar'}</button></div>{transcription.unsupported && <p className="mt-2 text-xs text-ink-500">Seu navegador não oferece gravação e transcrição simultâneas.</p>}{transcription.error && <p role="alert" className="mt-2 text-xs text-danger-600">{transcription.error}</p>}{transcription.recording && <p role="status" className="mt-2 text-xs text-brand-600">● Gravando e transcrevendo…</p>}{transcription.transcript && <div className="mt-3 max-h-40 overflow-y-auto rounded-lg bg-surface p-3 text-sm leading-relaxed text-ink-700"><p className="mb-1 text-xs font-semibold text-ink-500">Transcrição</p>{transcription.transcript}</div>}</section>}
         <p className="mt-1 text-sm font-medium text-ink-700">{activity.content.question}</p>
         {answerError && <p role="alert" className="mt-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{answerError}</p>}
         {options ? (

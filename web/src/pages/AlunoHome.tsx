@@ -37,6 +37,7 @@ export function AlunoHome() {
     session: liveSession,
     activity: liveActivity,
     contentTrigger: liveContentTrigger,
+    sessionConfig: liveSessionConfig,
     answered: liveAnswered,
     joining: liveJoining,
     joinError: liveJoinError,
@@ -117,6 +118,7 @@ export function AlunoHome() {
             session={liveSession}
             activity={liveActivity}
             contentTrigger={liveContentTrigger}
+            sessionConfig={liveSessionConfig}
             answered={liveAnswered}
             joining={liveJoining}
             joinError={liveJoinError}
