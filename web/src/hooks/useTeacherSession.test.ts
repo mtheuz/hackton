@@ -16,7 +16,10 @@ function chainable(result: { data: unknown; error: unknown }) {
   return builder;
 }
 
-const classesBuilder = chainable({ data: [{ id: 'class-1', name: 'Turma Demo' }], error: null });
+const classesBuilder = chainable({
+  data: [{ id: 'class-1', name: 'Turma Demo', discipline_id: null }],
+  error: null,
+});
 const sessionsBuilder = chainable({
   data: [
     {
@@ -145,5 +148,23 @@ describe('useTeacherSession', () => {
       content: 'E = mc²',
       accessibility_caption: 'Energia igual massa vezes velocidade da luz ao quadrado',
     });
+  });
+
+  it('loads classes with their assigned discipline', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() =>
+      expect(result.current.classes).toEqual([{ id: 'class-1', name: 'Turma Demo', disciplineId: null }]),
+    );
+  });
+
+  it('assigns a discipline to a class', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() => expect(result.current.classes.length).toBe(1));
+
+    await act(async () => {
+      await result.current.assignDiscipline('class-1', 'disc-1');
+    });
+
+    expect(classesBuilder.update).toHaveBeenCalledWith({ discipline_id: 'disc-1' });
   });
 });

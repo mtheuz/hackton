@@ -27,6 +27,12 @@ interface ActivityRow {
   content_json: ActivityContent;
 }
 
+interface ClassRow {
+  id: string;
+  name: string;
+  discipline_id: string | null;
+}
+
 function randomCode(): string {
   return String(Math.floor(1000 + Math.random() * 9000));
 }
@@ -51,6 +57,7 @@ interface UseTeacherSessionResult {
   endSession: () => Promise<void>;
   launchActivity: (type: ActivityType, content: ActivityContent) => Promise<void>;
   sendContentTrigger: (type: ContentTriggerType, content: string, accessibilityCaption?: string) => Promise<void>;
+  assignDiscipline: (classId: string, disciplineId: string) => Promise<void>;
 }
 
 export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
@@ -59,6 +66,21 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
   const [sessionConfig, setSessionConfig] = useState<SessionConfig | null>(null);
   const [activity, setActivity] = useState<LiveActivity | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const refetchClasses = useCallback(async () => {
+    if (!teacherId) {
+      setClasses([]);
+      return;
+    }
+    const { data } = await supabase.from('classes').select('id, name, discipline_id').eq('teacher_id', teacherId);
+    setClasses(
+      ((data ?? []) as ClassRow[]).map((row) => ({
+        id: row.id,
+        name: row.name,
+        disciplineId: row.discipline_id,
+      })),
+    );
+  }, [teacherId]);
 
   const refetchSession = useCallback(async () => {
     if (!teacherId) {
@@ -97,12 +119,8 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
   }, []);
 
   useEffect(() => {
-    if (!teacherId) return;
-    (async () => {
-      const { data } = await supabase.from('classes').select('id, name').eq('teacher_id', teacherId);
-      setClasses((data ?? []) as TeacherClass[]);
-    })();
-  }, [teacherId]);
+    void refetchClasses();
+  }, [refetchClasses]);
 
   useEffect(() => {
     void refetchSession();
@@ -200,6 +218,15 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
     [session],
   );
 
+  const assignDiscipline = useCallback(
+    async (classId: string, disciplineId: string) => {
+      const { error } = await supabase.from('classes').update({ discipline_id: disciplineId }).eq('id', classId);
+      if (error) throw error;
+      await refetchClasses();
+    },
+    [refetchClasses],
+  );
+
   return {
     classes,
     session,
@@ -210,5 +237,6 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
     endSession,
     launchActivity,
     sendContentTrigger,
+    assignDiscipline,
   };
 }
