@@ -1,11 +1,19 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { AlunoHome } from './pages/AlunoHome';
 import { ProfessorHome } from './pages/ProfessorHome';
 import { EscolaHome } from './pages/EscolaHome';
 import { RequireRole } from './components/RequireRole';
+import { useAuthStore } from './store/useAuthStore';
 
 export default function App() {
+  const init = useAuthStore((s) => s.init);
+
+  useEffect(() => {
+    void init();
+  }, [init]);
+
   return (
     <BrowserRouter>
       <Routes>

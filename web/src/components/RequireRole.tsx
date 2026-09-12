@@ -5,7 +5,8 @@ import type { UserRole } from '../types/user';
 
 export function RequireRole({ role, children }: { role: UserRole; children: ReactNode }) {
   const user = useAuthStore((s) => s.user);
-  if (!user) return <Navigate to="/login" replace />;
-  if (user.role !== role) return <Navigate to="/login" replace />;
+  const status = useAuthStore((s) => s.status);
+  if (status === 'loading') return null;
+  if (!user || user.role !== role) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }

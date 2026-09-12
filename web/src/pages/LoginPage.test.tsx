@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { LoginPage } from './LoginPage';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -28,7 +29,11 @@ describe('LoginPage', () => {
   });
 
   it('signs in and stores the user with role/name from the users table', async () => {
-    render(<LoginPage />);
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    );
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'professor@demo.foco' } });
     fireEvent.change(screen.getByLabelText(/senha/i), { target: { value: 'demo1234' } });

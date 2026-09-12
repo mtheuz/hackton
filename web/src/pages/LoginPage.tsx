@@ -1,5 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
+import type { UserRole } from '../types/user';
+
+const ROLE_HOME: Record<UserRole, string> = {
+  student: '/aluno',
+  teacher: '/professor',
+  school_admin: '/escola',
+};
 
 export function LoginPage() {
   const [email, setEmail] = useState('');
@@ -7,13 +15,15 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const signIn = useAuthStore((s) => s.signIn);
+  const navigate = useNavigate();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      await signIn(email, password);
+      const user = await signIn(email, password);
+      navigate(ROLE_HOME[user.role], { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao entrar');
     } finally {
