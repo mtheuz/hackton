@@ -32,7 +32,11 @@
 }
 
 :root {
-  color-scheme: light dark;
+  /* App só tem paleta clara (sem tokens dark definidos) — declarar "light dark"
+     aqui fazia o navegador renderizar controles nativos (popup do <select>,
+     scrollbar) no tema escuro do SO, com texto escuro nosso em cima:
+     dropdown ilegível. */
+  color-scheme: light;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
