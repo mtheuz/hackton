@@ -36,6 +36,9 @@ export function ModoAulaProfessor({
   const [options, setOptions] = useState(['', '']);
   const [correctIndex, setCorrectIndex] = useState(0);
   const [showLauncher, setShowLauncher] = useState(() => !activity);
+  const [startingClassId, setStartingClassId] = useState<string | null>(null);
+  const [launching, setLaunching] = useState(false);
+  const [ending, setEnding] = useState(false);
 
   if (!session) {
     return (
@@ -47,10 +50,18 @@ export function ModoAulaProfessor({
             <button
               key={c.id}
               type="button"
-              onClick={() => void onStartSession(c.id)}
-              className="min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white active:bg-brand-800"
+              disabled={startingClassId !== null}
+              onClick={async () => {
+                setStartingClassId(c.id);
+                try {
+                  await onStartSession(c.id);
+                } finally {
+                  setStartingClassId(null);
+                }
+              }}
+              className="min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white transition-colors active:bg-brand-800 disabled:opacity-50"
             >
-              Iniciar Modo Aula · {c.name}
+              {startingClassId === c.id ? 'Iniciando...' : `Iniciar Modo Aula · ${c.name}`}
             </button>
           ))}
         </div>
@@ -59,18 +70,35 @@ export function ModoAulaProfessor({
   }
 
   async function handleLaunch() {
-    const trimmedOptions = options.map((o) => o.trim()).filter(Boolean);
-    if (type === 'quiz') {
-      await onLaunchActivity('quiz', { question, options: trimmedOptions, correct_index: correctIndex });
-    } else if (type === 'poll') {
-      await onLaunchActivity('poll', { question, options: trimmedOptions });
-    } else {
-      await onLaunchActivity('open_question', { question });
+    setLaunching(true);
+    try {
+      const trimmedOptions = options.map((o) => o.trim()).filter(Boolean);
+      if (type === 'quiz') {
+        await onLaunchActivity('quiz', { question, options: trimmedOptions, correct_index: correctIndex });
+      } else if (type === 'poll') {
+        await onLaunchActivity('poll', { question, options: trimmedOptions });
+      } else {
+        await onLaunchActivity('open_question', { question });
+      }
+      setQuestion('');
+      setOptions(['', '']);
+      setCorrectIndex(0);
+      setShowLauncher(false);
+    } finally {
+      setLaunching(false);
     }
-    setQuestion('');
-    setOptions(['', '']);
-    setCorrectIndex(0);
-    setShowLauncher(false);
+  }
+
+  async function handleEndSession() {
+    if (!window.confirm('Encerrar a aula agora? Os alunos serão desconectados e não vão conseguir responder mais nada.')) {
+      return;
+    }
+    setEnding(true);
+    try {
+      await onEndSession();
+    } finally {
+      setEnding(false);
+    }
   }
 
   const needsOptions = type === 'quiz' || type === 'poll';
@@ -79,8 +107,13 @@ export function ModoAulaProfessor({
     <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
-        <button type="button" onClick={() => void onEndSession()} className="text-xs font-semibold text-danger-600">
-          Encerrar aula
+        <button
+          type="button"
+          disabled={ending}
+          onClick={() => void handleEndSession()}
+          className="text-xs font-semibold text-danger-600 disabled:opacity-50"
+        >
+          {ending ? 'Encerrando...' : 'Encerrar aula'}
         </button>
       </div>
       <p className="mt-2 text-3xl font-bold tracking-widest text-brand-600">{session.code}</p>
@@ -194,11 +227,11 @@ export function ModoAulaProfessor({
 
           <button
             type="button"
-            disabled={!question.trim()}
+            disabled={launching || !question.trim()}
             onClick={() => void handleLaunch()}
             className="mt-2 min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
-            Lançar atividade
+            {launching ? 'Lançando...' : 'Lançar atividade'}
           </button>
         </div>
       )}

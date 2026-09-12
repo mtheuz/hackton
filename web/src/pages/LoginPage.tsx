@@ -9,6 +9,18 @@ const ROLE_HOME: Record<UserRole, string> = {
   school_admin: '/escola',
 };
 
+const FRIENDLY_ERRORS: { match: RegExp; message: string }[] = [
+  { match: /invalid login credentials/i, message: 'Email ou senha incorretos. Confira e tente de novo.' },
+  { match: /email not confirmed/i, message: 'Esse email ainda não foi confirmado. Confira sua caixa de entrada.' },
+  { match: /failed to fetch|networkerror|network request failed/i, message: 'Sem conexão no momento. Confira o wi-fi e tente de novo.' },
+];
+
+function friendlyErrorMessage(err: unknown): string {
+  const raw = err instanceof Error ? err.message : '';
+  const known = FRIENDLY_ERRORS.find((entry) => entry.match.test(raw));
+  return known?.message ?? 'Não deu pra entrar agora. Tenta de novo em instantes.';
+}
+
 export function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -25,7 +37,7 @@ export function LoginPage() {
       const user = await signIn(email, password);
       navigate(ROLE_HOME[user.role], { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro ao entrar');
+      setError(friendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }

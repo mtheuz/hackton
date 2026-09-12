@@ -16,7 +16,13 @@ export function AlunoHome() {
   const user = useAuthStore((s) => s.user);
   const studentId = user?.id ?? '';
 
-  const { mission, completedCount, completeMission, simulateImpulse } = useInterceptaMission(studentId);
+  const {
+    mission,
+    completedCount,
+    loading: missionLoading,
+    completeMission,
+    simulateImpulse,
+  } = useInterceptaMission(studentId);
   const { progress } = useDomainProgress(studentId);
   const { recentMoods, checkin } = useMoodCheckins(studentId);
   const {
@@ -76,6 +82,7 @@ export function AlunoHome() {
             <CheckinHumor recentMoods={recentMoods} onCheckin={checkin} />
             <InterceptaCard
               mission={mission}
+              loading={missionLoading}
               completedCount={completedCount}
               onAnswer={completeMission}
               onSimulateImpulse={simulateImpulse}

@@ -3,6 +3,7 @@ import type { PendingMission } from '../types/intercepta';
 
 interface InterceptaCardProps {
   mission: PendingMission | null;
+  loading?: boolean;
   completedCount: number;
   onAnswer: (selectedIndex: number) => Promise<void>;
   onSimulateImpulse: () => Promise<void>;
@@ -10,7 +11,13 @@ interface InterceptaCardProps {
 
 const FEEDBACK_DISPLAY_MS = 2200;
 
-export function InterceptaCard({ mission: incomingMission, completedCount, onAnswer, onSimulateImpulse }: InterceptaCardProps) {
+export function InterceptaCard({
+  mission: incomingMission,
+  loading = false,
+  completedCount,
+  onAnswer,
+  onSimulateImpulse,
+}: InterceptaCardProps) {
   const [frozenMission, setFrozenMission] = useState<PendingMission | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -46,10 +53,12 @@ export function InterceptaCard({ mission: incomingMission, completedCount, onAns
         <p className="text-sm font-medium text-ink-700">
           Trocas de impulso por estudo: {completedCount}
         </p>
-        <p className="mt-1 text-xs text-ink-500">Sem missão agora. Quando um impulso surgir, ela aparece aqui.</p>
+        <p className="mt-1 text-xs text-ink-500">
+          {loading ? 'Carregando...' : 'Sem missão agora. Quando um impulso surgir, ela aparece aqui.'}
+        </p>
         <button
           type="button"
-          disabled={submitting}
+          disabled={submitting || loading}
           onClick={() => void handleSimulate()}
           className="mt-3 min-h-11 rounded-full bg-brand-600 px-4 text-xs font-semibold text-white transition-colors active:bg-brand-800 disabled:opacity-50"
         >

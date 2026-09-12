@@ -28,6 +28,16 @@ export function ModoAulaAluno({
 }: ModoAulaAlunoProps) {
   const [code, setCode] = useState('');
   const [text, setText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleAnswer(payload: { selectedIndex?: number; text?: string }) {
+    setSubmitting(true);
+    try {
+      await onSubmitAnswer(payload);
+    } finally {
+      setSubmitting(false);
+    }
+  }
 
   if (!session || session.status === 'finished') {
     return (
@@ -51,7 +61,7 @@ export function ModoAulaAluno({
             onClick={() => void onJoin(code.trim())}
             className="min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
-            Entrar na aula
+            {joining ? 'Entrando...' : 'Entrar na aula'}
           </button>
         </div>
         {joinError && <p className="mt-2 text-xs text-danger-600">{joinError}</p>}
@@ -92,8 +102,9 @@ export function ModoAulaAluno({
             <button
               key={option}
               type="button"
-              onClick={() => void onSubmitAnswer({ selectedIndex: index })}
-              className="min-h-11 rounded-lg border border-line-200 px-3 py-2 text-left text-sm active:bg-canvas"
+              disabled={submitting}
+              onClick={() => void handleAnswer({ selectedIndex: index })}
+              className="min-h-11 rounded-lg border border-line-200 px-3 py-2 text-left text-sm transition-colors active:bg-canvas disabled:opacity-50"
             >
               {option}
             </button>
@@ -104,15 +115,16 @@ export function ModoAulaAluno({
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            className="min-h-20 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
+            disabled={submitting}
+            className="min-h-20 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20 disabled:opacity-50"
           />
           <button
             type="button"
-            disabled={text.trim().length === 0}
-            onClick={() => void onSubmitAnswer({ text: text.trim() })}
+            disabled={submitting || text.trim().length === 0}
+            onClick={() => void handleAnswer({ text: text.trim() })}
             className="min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
-            Enviar
+            {submitting ? 'Enviando...' : 'Enviar'}
           </button>
         </div>
       )}
