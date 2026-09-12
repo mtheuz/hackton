@@ -97,7 +97,7 @@ export function ModoAulaProfessor({
                 const pct = total === 0 ? 0 : Math.round((count / total) * 100);
                 return (
                   <li key={option}>
-                    <div className="flex justify-between text-xs text-ink-500">
+                    <div className="flex justify-between text-xs font-medium text-ink-700">
                       <span>{option}</span>
                       <span>
                         {count} ({pct}%)
@@ -140,7 +140,7 @@ export function ModoAulaProfessor({
             id="activity-type"
             value={type}
             onChange={(e) => setType(e.target.value as ActivityType)}
-            className="min-h-11 rounded-lg border border-line-200 px-3 text-sm"
+            className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
           >
             <option value="quiz">Quiz</option>
             <option value="poll">Enquete</option>
@@ -154,7 +154,7 @@ export function ModoAulaProfessor({
             id="activity-question"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            className="min-h-11 rounded-lg border border-line-200 px-3 text-sm"
+            className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
           />
 
           {needsOptions && (
@@ -178,7 +178,7 @@ export function ModoAulaProfessor({
                       setOptions(next);
                     }}
                     placeholder={`Opção ${index + 1}`}
-                    className="min-h-11 flex-1 rounded-lg border border-line-200 px-3 text-sm"
+                    className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
                   />
                 </div>
               ))}

@@ -1,8 +1,11 @@
 import { useAuthStore } from '../store/useAuthStore';
 import { LogoutButton } from '../components/LogoutButton';
+import { useSchoolInsights } from '../hooks/useSchoolInsights';
+import { SchoolInsights } from '../components/SchoolInsights';
 
 export function EscolaHome() {
   const user = useAuthStore((s) => s.user);
+  const { signals, loading } = useSchoolInsights();
 
   return (
     <div className="min-h-svh bg-canvas pb-safe">
@@ -16,8 +19,8 @@ export function EscolaHome() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md p-4 sm:p-6">
-        <p className="text-sm text-ink-500">Área da escola</p>
+      <main className="mx-auto max-w-md space-y-4 p-4 sm:p-6">
+        <SchoolInsights signals={signals} loading={loading} />
       </main>
     </div>
   );

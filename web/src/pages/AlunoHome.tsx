@@ -76,7 +76,7 @@ export function AlunoHome() {
               {progress.map((p) => (
                 <li key={p.subject} className="flex items-center justify-between text-sm">
                   <span className="capitalize text-ink-700">{p.subject}</span>
-                  <span className="text-ink-500">
+                  <span className="font-medium text-ink-700">
                     Nível {p.level} · {p.pfAccumulated} PF
                   </span>
                 </li>

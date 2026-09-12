@@ -1,17 +1,18 @@
 @import "tailwindcss";
 
 @theme {
-  /* DESIGN.md — roxo como cor de destaque */
-  --color-brand-50: #f1edff;
-  --color-brand-100: #e4daff;
-  --color-brand-500: #a78bfa;
-  --color-brand-600: #7c5cfc;
-  --color-brand-700: #6d4ee8;
-  --color-brand-800: #5a3fc4;
+  /* DESIGN.md — Notion Blue como cor estrutural principal */
+  --color-brand-50: #eaf2f9;
+  --color-brand-100: #d0e3f2;
+  --color-brand-500: #14699f;
+  --color-brand-600: #0e5a96;
+  --color-brand-700: #0b4878;
+  --color-brand-800: #0a4370;
 
   --color-ink-900: #20202a;
   --color-ink-700: #20202a;
-  --color-ink-500: #777783;
+  /* Darkened from DESIGN.md's #777783 (~4.3:1, fails WCAG AA at small sizes) to pass 4.5:1 on white/canvas */
+  --color-ink-500: #5f5f6b;
   --color-ink-300: #a0a0aa;
 
   --color-line-200: #ececf2;
