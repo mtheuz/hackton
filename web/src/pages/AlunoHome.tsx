@@ -9,6 +9,8 @@ import { CheckinHumor } from '../components/CheckinHumor';
 import { LogoutButton } from '../components/LogoutButton';
 import { ModoAulaAluno } from '../components/ModoAulaAluno';
 import { AlunoTabBar, type AlunoTab } from '../components/AlunoTabBar';
+import EmptyProgressIcon from '~icons/streamline-ultimate-color/picture-sun';
+import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
 
 export function AlunoHome() {
   const user = useAuthStore((s) => s.user);
@@ -47,7 +49,7 @@ export function AlunoHome() {
           </div>
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5">
-              <span aria-hidden className="text-sm">🔄</span>
+              <SynchronizeArrowIcon aria-hidden className="h-4 w-4" />
               <span className="text-xs font-semibold text-brand-600">{completedCount}</span>
             </div>
             <LogoutButton />
@@ -85,7 +87,10 @@ export function AlunoHome() {
           <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
             <h2 className="text-sm font-semibold text-ink-700">Seu progresso</h2>
             {progress.length === 0 ? (
-              <p className="mt-2 text-sm text-ink-500">Ainda sem progresso registrado.</p>
+              <div className="mt-2 flex flex-col items-center gap-2 py-4 text-center">
+                <EmptyProgressIcon aria-hidden className="h-16 w-16" />
+                <p className="text-sm text-ink-500">Ainda sem progresso registrado.</p>
+              </div>
             ) : (
               <ul className="mt-3 space-y-2">
                 {progress.map((p) => (

@@ -1,3 +1,7 @@
+import GraduationCapIcon from '~icons/twemoji/graduation-cap';
+import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
+import AnalyticsBarsIcon from '~icons/streamline-ultimate-color/analytics-bars-3d';
+
 export type AlunoTab = 'aula' | 'intercepta' | 'progresso';
 
 interface AlunoTabBarProps {
@@ -6,10 +10,10 @@ interface AlunoTabBarProps {
   aulaBadge: boolean;
 }
 
-const TABS: { id: AlunoTab; label: string; emoji: string }[] = [
-  { id: 'aula', label: 'Aula', emoji: '🎓' },
-  { id: 'intercepta', label: 'Intercepta', emoji: '🔄' },
-  { id: 'progresso', label: 'Progresso', emoji: '📊' },
+const TABS: { id: AlunoTab; label: string; Icon: typeof GraduationCapIcon }[] = [
+  { id: 'aula', label: 'Aula', Icon: GraduationCapIcon },
+  { id: 'intercepta', label: 'Intercepta', Icon: SynchronizeArrowIcon },
+  { id: 'progresso', label: 'Progresso', Icon: AnalyticsBarsIcon },
 ];
 
 export function AlunoTabBar({ active, onChange, aulaBadge }: AlunoTabBarProps) {
@@ -29,8 +33,8 @@ export function AlunoTabBar({ active, onChange, aulaBadge }: AlunoTabBarProps) {
               ].join(' ')}
               aria-current={isActive ? 'page' : undefined}
             >
-              <span className="relative text-lg" aria-hidden>
-                {tab.emoji}
+              <span className="relative" aria-hidden>
+                <tab.Icon className="h-5 w-5" />
                 {tab.id === 'aula' && aulaBadge && (
                   <span className="absolute -right-1 -top-0.5 h-2 w-2 rounded-full bg-danger-600" />
                 )}

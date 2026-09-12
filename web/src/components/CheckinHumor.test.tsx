@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within } from '@testing-library/react';
 import { CheckinHumor } from './CheckinHumor';
 
 describe('CheckinHumor', () => {
@@ -12,7 +12,7 @@ describe('CheckinHumor', () => {
     expect(onCheckin).toHaveBeenCalledWith('muito_bem');
   });
 
-  it('renders the recent mood history as emoji', () => {
+  it('renders the recent mood history as icons', () => {
     render(
       <CheckinHumor
         recentMoods={[{ id: 'evt-1', mood: 'bem', createdAt: '2026-09-12T10:00:00Z' }]}
@@ -20,6 +20,7 @@ describe('CheckinHumor', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Histórico recente de humor')).toHaveTextContent('🙂');
+    const history = screen.getByLabelText('Histórico recente de humor');
+    expect(within(history).getByRole('img', { name: 'Bem' })).toBeInTheDocument();
   });
 });

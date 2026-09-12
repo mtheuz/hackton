@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { SchoolInsights } from './SchoolInsights';
 
 describe('SchoolInsights', () => {
@@ -21,8 +21,10 @@ describe('SchoolInsights', () => {
       />,
     );
 
-    expect(screen.getByText('5')).toBeInTheDocument();
-    expect(screen.getByText('9')).toBeInTheDocument();
+    const impulseCard = screen.getByText('Trocas de impulso').closest('div')!;
+    expect(within(impulseCard).getByText('5')).toBeInTheDocument();
+    const answersCard = screen.getByText('Respostas Modo Aula').closest('div')!;
+    expect(within(answersCard).getByText('9')).toBeInTheDocument();
     expect(screen.getByText('10/09')).toBeInTheDocument();
     expect(screen.getByText('11/09')).toBeInTheDocument();
   });
