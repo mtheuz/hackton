@@ -2,9 +2,11 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useInterceptaMission } from '../hooks/useInterceptaMission';
 import { useDomainProgress } from '../hooks/useDomainProgress';
 import { useMoodCheckins } from '../hooks/useMoodCheckins';
+import { useLiveSession } from '../hooks/useLiveSession';
 import { InterceptaCard } from '../components/InterceptaCard';
 import { CheckinHumor } from '../components/CheckinHumor';
 import { LogoutButton } from '../components/LogoutButton';
+import { ModoAulaAluno } from '../components/ModoAulaAluno';
 
 export function AlunoHome() {
   const user = useAuthStore((s) => s.user);
@@ -13,6 +15,16 @@ export function AlunoHome() {
   const { mission, completedCount, completeMission, simulateImpulse } = useInterceptaMission(studentId);
   const { progress } = useDomainProgress(studentId);
   const { recentMoods, checkin } = useMoodCheckins(studentId);
+  const {
+    session: liveSession,
+    activity: liveActivity,
+    answered: liveAnswered,
+    joining: liveJoining,
+    joinError: liveJoinError,
+    join: joinLiveSession,
+    submitAnswer: submitLiveAnswer,
+    leave: leaveLiveSession,
+  } = useLiveSession(studentId);
 
   if (!user) return null;
 
@@ -35,6 +47,17 @@ export function AlunoHome() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 p-4 sm:p-6">
+        <ModoAulaAluno
+          session={liveSession}
+          activity={liveActivity}
+          answered={liveAnswered}
+          joining={liveJoining}
+          joinError={liveJoinError}
+          onJoin={joinLiveSession}
+          onSubmitAnswer={submitLiveAnswer}
+          onLeave={leaveLiveSession}
+        />
+
         <CheckinHumor recentMoods={recentMoods} onCheckin={checkin} />
 
         <InterceptaCard
