@@ -2,7 +2,8 @@
 
 > **Projeto**: Fokido  
 > **Descrição**: Plataforma web de aprendizagem ativa em sala de aula (Modo Aula) e reconversão de impulsos digitais fora da escola (Intercepta), com Tutor Restrito com IA e Raio-X socioemocional privado.  
-> **Stack Principal**: Go (Backend API) | React + TypeScript (Frontend Web/PWA) | Supabase (Database PostgreSQL, Auth, Realtime & RLS)
+> **Stack Principal**: React + TypeScript (Frontend Web/PWA) | Supabase (Database PostgreSQL, Auth, Realtime, RLS & Edge Functions)
+> **Nota de MVP**: Sem backend Go no MVP. Toda a plataforma roda em Supabase — client direto (`@supabase/supabase-js`), RLS/Postgres functions para regras de dado, e Edge Functions (Deno/TS) para lógica que precisa de segredo/servidor (ex: chamadas ao LLM do Tutor Restrito).
 
 ---
 
@@ -24,7 +25,7 @@ O **Fokido** é uma plataforma educacional web desenhada para resolver simultane
 
 ## 2. Fundamentação Científica & Conformidade Normativa
 
-Ao implementar recursos no backend (Go) ou frontend (React), os Agentes de IA e desenvolvedores DEVEM respeitar as seguintes premissas:
+Ao implementar recursos em Supabase (Edge Functions, RLS, Postgres functions) ou frontend (React), os Agentes de IA e desenvolvedores DEVEM respeitar as seguintes premissas:
 
 ### A. Gestão de Dopamina e Neurociência do Hábito
 - **Tamanho Percebido da Tarefa vs. Energia de Realização**: O cérebro economiza energia biológica. As missões do *Intercepta* devem ter duração de **3 a 5 minutos** (tarefas percebidas como pequenas) para diminuir o atrito e quebrar a inércia em momentos de baixa força de vontade.
@@ -41,16 +42,15 @@ Ao implementar recursos no backend (Go) ou frontend (React), os Agentes de IA e 
 
 ### Stack Overview
 ```text
-[ React (Vite + TS + Tailwind) ] <---> [ Supabase Realtime / Client ]
-             |
-             +---> [ Go (REST API / Middleware JWT) ] ---> [ Supabase PostgreSQL DB ]
-                                                                ^
-                                                                | (RLS Policies)
+[ React (Vite + TS + Tailwind) ] <---> [ Supabase Client / Realtime ] ---> [ Supabase PostgreSQL DB ]
+                                                  |                              ^
+                                                  +---> [ Edge Functions ] ------+ (RLS Policies)
+                                                        (LLM Tutor Restrito, etc.)
 ```
 
 ### Stack Detail
 - **Frontend (`/web`)**: React 18+, TypeScript, Vite, Tailwind CSS, TanStack Query (React Query) para cache/fetches, Zustand para gerenciamento de estado global leve, `@supabase/supabase-js`.
-- **Backend (`/api`)**: Go 1.22+, `chi` router (ou `gin`), arquitetura limpa (Handler -> Service -> Repository), middleware de autenticação validando tokens JWT do Supabase, cliente HTTP otimizado para chamadas aos LLMs (Tutor Restrito).
+- **Backend**: Nenhum servidor próprio no MVP. Regra de negócio vive em Postgres functions/RLS (dado) e Supabase Edge Functions em `/supabase/functions` (lógica que precisa de segredo/servidor, ex: chamada ao LLM do Tutor Restrito), autenticadas via JWT do Supabase Auth.
 - **Banco de Dados & Infra (`/supabase`)**: Supabase PostgreSQL, Migrations gerenciadas via Supabase CLI, Row Level Security (RLS) estrito para garantia de isolamento de dados por papel (`student`, `teacher`, `school_admin`).
 
 ---
@@ -59,36 +59,26 @@ Ao implementar recursos no backend (Go) ou frontend (React), os Agentes de IA e 
 
 ```directory
 /fokido
-├── api/                   # Backend em Go
-│   ├── cmd/
-│   │   └── server/        # Ponto de entrada (main.go)
-│   ├── internal/
-│   │   ├── config/        # Variáveis de ambiente e secrets
-│   │   ├── handler/       # Handlers HTTP REST
-│   │   ├── middleware/    # Auth Supabase JWT, CORS, Rate Limit, Logging
-│   │   ├── model/         # Structs de domínio e DTOs
-│   │   ├── repository/    # Acesso a banco / Supabase Postgres Client
-│   │   └── service/       # Regras de negócio (Sessão Aula, Intercepta, Tutor Prompt)
-│   ├── pkg/               # Bibliotecas reutilizáveis (logger, httpclient)
-│   ├── go.mod
-│   └── go.sum
 ├── web/                   # Frontend React (Mobile-First SPA/PWA)
 │   ├── src/
 │   │   ├── assets/        # Ícones e imagens
 │   │   ├── components/    # UI components (ModoAula, InterceptaCard, ChatTutor, CheckinHumor)
 │   │   ├── hooks/         # Custom hooks (useRealtimeSession, useAuth, useCheckin)
 │   │   ├── pages/         # Páginas por ator (/aluno, /professor, /escola)
-│   │   ├── services/      # Cliente HTTP (Go API) e Supabase Client
+│   │   ├── services/      # Supabase Client
 │   │   ├── store/         # Zustand stores (useUserStore, useSessionStore)
 │   │   ├── types/         # Definições TypeScript
 │   │   ├── App.tsx
 │   │   └── main.tsx
 │   ├── package.json
 │   └── vite.config.ts
-└── supabase/              # Schema, Migrations e RLS
+└── supabase/              # Schema, Migrations, RLS e Edge Functions
     ├── migrations/        # Arquivos de migração SQL
     │   ├── 00001_initial_schema.sql
-    │   └── 00002_rls_policies.sql
+    │   ├── 00002_extensions.sql
+    │   ├── 00003_rls_policies.sql
+    │   └── 00004_seed_demo.sql
+    ├── functions/         # Edge Functions (Deno/TS) — ex: tutor-restrito
     └── config.toml
 ```
 
@@ -114,11 +104,12 @@ Ao implementar recursos no backend (Go) ou frontend (React), os Agentes de IA e 
 
 Quando um Agente de IA estiver gerando código neste repositório, DEVE seguir estas diretrizes:
 
-### A. Regras para Backend (Go)
-- Use contexto explicitamente: `ctx context.Context` em todas as assinaturas de service e repository.
-- Tratamento rigoroso de erros: Nunca ignorar erros com `_`. Retornar respostas JSON padronizadas: `{"error": "mensagem clara", "code": 400}`.
-- Autenticação: Extrair `user_id` e `role` a partir das claims do JWT validado no middleware Supabase.
+### A. Regras para Backend (Supabase Edge Functions)
+- Toda lógica que precisa de segredo (API key de LLM, etc.) ou bypass de RLS vai em Edge Function (`/supabase/functions`), nunca no client.
+- Tratamento rigoroso de erros: Nunca ignorar erros silenciosamente. Retornar respostas JSON padronizadas: `{"error": "mensagem clara", "code": 400}`.
+- Autenticação: Extrair `user_id` e `role` a partir do JWT do Supabase Auth (`Authorization` header), validado via `supabase.auth.getUser()`.
 - Conectividade Resiliente: Tratar retentativas com backoff exponencial para ambientes de sala de aula com wi-fi instável.
+- Regra de dado que não precisa de segredo (agregação, validação simples) fica em Postgres function/RLS, não em Edge Function.
 
 ### B. Regras para Frontend (React + TypeScript)
 - **Mobile-First e Navegador Puro**: O aluno entra pelo navegador do celular sem instalar nada. Design deve ser totalmente responsivo (viewports de 360px a 430px para smartphones).
@@ -127,7 +118,7 @@ Quando um Agente de IA estiver gerando código neste repositório, DEVE seguir e
 - **Feedback Visual Imediato**: Ações do Modo Aula (enviar resposta, check-in) devem fornecer feedback tátil/visual instantâneo com estados otimistas.
 
 ### C. Regras para o Tutor Restrito (Prompt da IA)
-O prompt do sistema para o serviço do Tutor Restrito em Go deve seguir este modelo rígido:
+O prompt do sistema para a Edge Function do Tutor Restrito deve seguir este modelo rígido:
 ```text
 Você é o Tutor Restrito do Fokido, um assistente pedagógico para estudantes do Ensino Fundamental II e Ensino Médio.
 REGRAS INEGOCIÁVEIS:
@@ -143,12 +134,12 @@ REGRAS INEGOCIÁVEIS:
 
 ### Executando Localmente
 - **Supabase Local**: `supabase start`
-- **Backend Go**: `cd api && go run cmd/server/main.go`
+- **Edge Functions**: `supabase functions serve`
 - **Frontend React**: `cd web && npm run dev`
 
 ### Testes e Qualidade
-- **Go Tests**: `go test -v -race ./...`
-- **React Lint & Typecheck**: `npm run lint && npm run typecheck`
+- **React Lint & Build (typecheck)**: `cd web && npm run lint && npm run build`
+- **Testes de componente**: `cd web && npm test`
 - **Supabase RLS Tests**: Garantir que as migrations possuem testes de políticas RLS.
 
 ---

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import type { PendingMission } from '../types/intercepta';
 
 interface InterceptaCardProps {
@@ -8,17 +8,26 @@ interface InterceptaCardProps {
   onSimulateImpulse: () => Promise<void>;
 }
 
-export function InterceptaCard({ mission, completedCount, onAnswer, onSimulateImpulse }: InterceptaCardProps) {
-  const [answered, setAnswered] = useState(false);
+const FEEDBACK_DISPLAY_MS = 2200;
+
+export function InterceptaCard({ mission: incomingMission, completedCount, onAnswer, onSimulateImpulse }: InterceptaCardProps) {
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [showFeedback, setShowFeedback] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const frozenMissionRef = useRef<PendingMission | null>(null);
+
+  const displayedMission = showFeedback ? frozenMissionRef.current : incomingMission;
 
   async function handleAnswer(index: number) {
-    setAnswered(true);
+    frozenMissionRef.current = incomingMission;
+    setSelectedIndex(index);
+    setShowFeedback(true);
     setSubmitting(true);
     try {
       await onAnswer(index);
     } finally {
       setSubmitting(false);
+      window.setTimeout(() => setShowFeedback(false), FEEDBACK_DISPLAY_MS);
     }
   }
 
@@ -31,15 +40,18 @@ export function InterceptaCard({ mission, completedCount, onAnswer, onSimulateIm
     }
   }
 
-  if (!mission) {
+  if (!displayedMission) {
     return (
-      <section className="rounded-2xl border border-[#e6e6e6] bg-white p-5 shadow-sm">
-        <p className="text-sm text-[#615d59]">Sem missão agora. Trocas de impulso por estudo: {completedCount}</p>
+      <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+        <p className="text-sm font-medium text-ink-700">
+          Trocas de impulso por estudo: {completedCount}
+        </p>
+        <p className="mt-1 text-xs text-ink-500">Sem missão agora. Quando um impulso surgir, ela aparece aqui.</p>
         <button
           type="button"
           disabled={submitting}
           onClick={() => void handleSimulate()}
-          className="mt-3 rounded-full bg-[#0E5A96] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+          className="mt-3 min-h-11 rounded-full bg-brand-600 px-4 text-xs font-semibold text-white transition-colors active:bg-brand-800 disabled:opacity-50"
         >
           Simular impulso (demo)
         </button>
@@ -47,24 +59,46 @@ export function InterceptaCard({ mission, completedCount, onAnswer, onSimulateIm
     );
   }
 
+  const mission = displayedMission;
+  const isCorrect = selectedIndex !== null && selectedIndex === mission.content.correct_index;
+
   return (
-    <section className="rounded-2xl border border-[#e6e6e6] bg-white p-5 shadow-sm">
-      <p className="text-xs font-semibold uppercase text-[#0E5A96]">{mission.content.subject}</p>
-      <p className="mt-1 text-sm font-medium text-[#31302e]">{mission.content.question}</p>
+    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm" aria-live="polite">
+      <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">{mission.content.subject}</p>
+      <p className="mt-1 text-sm font-medium text-ink-700">{mission.content.question}</p>
       <div className="mt-3 flex flex-col gap-2">
-        {mission.content.options.map((option, index) => (
-          <button
-            key={option}
-            type="button"
-            disabled={answered || submitting}
-            onClick={() => void handleAnswer(index)}
-            className="rounded-lg border border-[#dddddd] px-3 py-2 text-left text-sm disabled:opacity-50"
-          >
-            {option}
-          </button>
-        ))}
+        {mission.content.options.map((option, index) => {
+          const isSelected = selectedIndex === index;
+          const isRightAnswer = showFeedback && index === mission.content.correct_index;
+          const isWrongSelection = showFeedback && isSelected && !isCorrect;
+
+          return (
+            <button
+              key={option}
+              type="button"
+              disabled={showFeedback || submitting}
+              onClick={() => void handleAnswer(index)}
+              className={[
+                'min-h-11 rounded-lg border px-3 py-2 text-left text-sm transition-colors disabled:opacity-100',
+                isRightAnswer
+                  ? 'border-success-600 bg-success-50 text-success-600 font-semibold'
+                  : isWrongSelection
+                    ? 'border-danger-600 bg-danger-50 text-danger-600 font-semibold'
+                    : 'border-line-200 text-ink-700 active:bg-canvas',
+              ].join(' ')}
+            >
+              {option}
+            </button>
+          );
+        })}
       </div>
-      {answered && <p className="mt-3 text-xs text-[#615d59]">Valeu por trocar a rede social pelo estudo!</p>}
+      {showFeedback && (
+        <p className={`mt-3 text-xs font-medium ${isCorrect ? 'text-success-600' : 'text-danger-600'}`}>
+          {isCorrect
+            ? `Valeu por trocar a rede social pelo estudo! +${mission.content.pf_reward} PF`
+            : 'Quase! A resposta certa está destacada acima.'}
+        </p>
+      )}
     </section>
   );
 }

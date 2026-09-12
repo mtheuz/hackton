@@ -1,5 +1,30 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-50: #eef5fb;
+  --color-brand-100: #d7e8f5;
+  --color-brand-500: #1373bb;
+  --color-brand-600: #0e5a96;
+  --color-brand-700: #0b4878;
+  --color-brand-800: #0a4370;
+
+  --color-ink-900: #201f1c;
+  --color-ink-700: #31302e;
+  --color-ink-500: #615d59;
+  --color-ink-300: #a39e98;
+
+  --color-line-200: #e6e6e6;
+  --color-canvas: #f6f5f4;
+  --color-surface: #ffffff;
+
+  --color-success-50: #eafbf2;
+  --color-success-600: #1a8f56;
+  --color-danger-50: #fdecec;
+  --color-danger-600: #c8303f;
+
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
 :root {
   color-scheme: light dark;
   font-synthesis: none;
@@ -10,4 +35,23 @@
 
 body {
   margin: 0;
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas);
+}
+
+/* Momentum scroll + tap-highlight cleanup for mobile Safari/Chrome */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  touch-action: manipulation;
+}
+
+.pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
 }

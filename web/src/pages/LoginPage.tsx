@@ -32,7 +32,7 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center bg-[#f6f5f4] p-4 sm:p-6">
+    <div className="flex min-h-svh flex-col items-center justify-center bg-canvas p-4 sm:p-6">
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center justify-center text-center">
           <img
@@ -40,17 +40,17 @@ export function LoginPage() {
             alt="Fokido Logo"
             className="h-28 w-auto object-contain transition-transform duration-300 hover:scale-105"
           />
-          <p className="mt-2 text-sm text-[#615d59]">
+          <p className="mt-2 text-sm text-ink-500">
             Acesse sua conta na plataforma educacional
           </p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="flex w-full flex-col gap-4 rounded-2xl border border-[#e6e6e6] bg-white p-8 shadow-sm transition-all duration-200 hover:shadow-md"
+          className="flex w-full flex-col gap-4 rounded-2xl border border-line-200 bg-surface p-6 shadow-sm transition-all duration-200 hover:shadow-md sm:p-8"
         >
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="email" className="text-sm font-semibold text-[#31302e]">
+            <label htmlFor="email" className="text-sm font-semibold text-ink-700">
               Email
             </label>
             <input
@@ -60,13 +60,13 @@ export function LoginPage() {
               placeholder="seu.email@escola.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-lg border border-[#dddddd] bg-[#fafafa] px-3.5 py-2.5 text-sm text-[#000000] outline-none transition-all duration-200 focus:border-[#0E5A96] focus:bg-white focus:ring-2 focus:ring-[#0E5A96]/20"
+              className="min-h-11 rounded-lg border border-[#dddddd] bg-[#fafafa] px-3.5 py-2.5 text-sm text-black outline-none transition-all duration-200 focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-brand-600/20"
             />
           </div>
 
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <label htmlFor="password" className="text-sm font-semibold text-[#31302e]">
+              <label htmlFor="password" className="text-sm font-semibold text-ink-700">
                 Senha
               </label>
             </div>
@@ -77,12 +77,12 @@ export function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="rounded-lg border border-[#dddddd] bg-[#fafafa] px-3.5 py-2.5 text-sm text-[#000000] outline-none transition-all duration-200 focus:border-[#0E5A96] focus:bg-white focus:ring-2 focus:ring-[#0E5A96]/20"
+              className="min-h-11 rounded-lg border border-[#dddddd] bg-[#fafafa] px-3.5 py-2.5 text-sm text-black outline-none transition-all duration-200 focus:border-brand-600 focus:bg-white focus:ring-2 focus:ring-brand-600/20"
             />
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-100 bg-red-50 p-3 text-xs font-medium text-red-600">
+            <div className="flex items-center gap-2 rounded-lg border border-danger-50 bg-danger-50 p-3 text-xs font-medium text-danger-600">
               <svg className="h-4 w-4 shrink-0 fill-current" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>
@@ -93,7 +93,7 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 flex w-full items-center justify-center rounded-full bg-[#0E5A96] py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-[#0b4878] hover:shadow active:bg-[#0A4370] disabled:opacity-50"
+            className="mt-2 flex min-h-12 w-full items-center justify-center rounded-full bg-brand-600 py-3 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-brand-700 hover:shadow active:bg-brand-800 disabled:opacity-50"
           >
             {loading ? (
               <span className="inline-flex items-center gap-2">
@@ -109,7 +109,7 @@ export function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-[#a39e98]">
+        <p className="text-center text-xs text-ink-300">
           &copy; {new Date().getFullYear()} Fokido. Todos os direitos reservados.
         </p>
       </div>
