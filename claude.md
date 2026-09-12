@@ -1,146 +1,72 @@
-# AGENTS.md — Diretrizes para Agentes de IA e Desenvolvedores
+# CLAUDE.md — Foco
 
-> **Projeto**: Fokido  
-> **Descrição**: Plataforma web de aprendizagem ativa em sala de aula (Modo Aula) e reconversão de impulsos digitais fora da escola (Intercepta), com Tutor Restrito com IA e Raio-X socioemocional privado.  
-> **Stack Principal**: React + TypeScript (Frontend Web/PWA) | Supabase (Database PostgreSQL, Auth, Realtime, RLS & Edge Functions)
-> **Nota de MVP**: Sem backend Go no MVP. Toda a plataforma roda em Supabase — client direto (`@supabase/supabase-js`), RLS/Postgres functions para regras de dado, e Edge Functions (Deno/TS) para lógica que precisa de segredo/servidor (ex: chamadas ao LLM do Tutor Restrito).
+Guia de contexto pra Claude Code trabalhar neste repositório. Leia isto antes de qualquer tarefa.
 
----
+## O que é o produto
 
-## 1. Visão Geral e Propósito do Produto
+Plataforma gamificada e educacional que ensina o aluno a usar o celular como ferramenta de estudo — dentro da sala de aula (guiado pelo professor) e fora dela (interceptando o momento de distração e oferecendo estudo no lugar). Feita pra um hackathon de 12h sobre "uso consciente de smartphones nas escolas", com três atores: **aluno**, **professor**, **coordenação escolar**.
 
-O **Fokido** é uma plataforma educacional web desenhada para resolver simultaneamente os desafios regulatórios do celular em sala de aula (**Lei 15.100**, **Decreto 12.385**) e os desafios biológicos e comportamentais da distração digital fora da escola.
+Contexto legal relevante (Brasil): Lei 15.100/2025 restringe uso de celular em aulas/recreio, exceto uso pedagógico autorizado pelo professor. Decreto 12.385/2025 obriga escolas a ter estratégias de identificação de sofrimento psíquico. O produto existe pra atender essas duas obrigações, não pra contorná-las.
 
-### Os Três Atores e a Regra do Fio Condutor
-- **Aluno**: O celular vira ferramenta de aprendizagem ativa na aula. Fora da escola, recebe missões de 3 a 5 minutos nos momentos de impulso hábito-rede social. Recebe um **Raio-X privado** de desempenho e humor.
-- **Professor**: Conduz o **Modo Aula** (quizzes colaborativos, enquetes, perguntas abertas) em tempo real, enxergando engajamento e pontos de trava da turma sem burocracia.
-- **Escola**: Cumpre exigências legais de uso pedagógico autorizado e visualiza **sinais agregados e anonimizados** de bem-estar e engajamento da turma ao longo do tempo.
+Documento de produto completo (peças do MVP, fluxo de telas, modelo de dados de referência) está em `produto.md` (raiz do repo) — leia antes de implementar qualquer feature nova pra entender o "porquê", não só o "o quê". `produto.md` tem uma seção "Status de implementação" que reflete o estado real do código — mais confiável que a visão original pra saber o que já existe.
 
-> **Princípio da Tabela Única de Eventos**: Um único evento de interações/check-in alimenta três visões distintas por meio de filtros e visões seguras:
-> 1. `Visão Aluno`: Privada, individual, restrita ao próprio usuário.
-> 2. `Visão Professor`: Agregada em tempo real por sessão/sala de aula.
-> 3. `Visão Escola`: Agregada e anonimizada por turma/período histórico.
+## Stack
 
----
+**Sem backend próprio.** Toda a plataforma roda em Supabase — decisão travada durante a implementação (o hackathon não comportava também manter um backend Go em paralelo; ver `docs/superpowers/plans/2026-09-11-fundacao.md` pra o histórico dessa virada).
 
-## 2. Fundamentação Científica & Conformidade Normativa
+- **Frontend:** React + TypeScript + Vite + TailwindCSS, `@supabase/supabase-js` direto (sem camada HTTP própria).
+- **Banco/Auth/Realtime/RBAC:** Supabase (Postgres + Row Level Security + Supabase Auth + Realtime channels). RLS é o único ponto de controle de acesso — não existe validação de role redundante em servidor próprio.
+- **IA (tutor restrito):** Supabase Edge Function (`supabase/functions/tutor-restrito`, Deno/TS) chamada direto do frontend via `supabase.functions.invoke(...)`. A function roda com o JWT do próprio aluno (nunca service role) e injeta a chave da API de IA a partir de um secret do projeto — o frontend nunca vê essa chave. Isso substitui "chamada via backend Go" do texto antigo: aqui "nunca no frontend" significa "a chave fica só no secret da Edge Function", não "existe um servidor Go no meio".
 
-Ao implementar recursos em Supabase (Edge Functions, RLS, Postgres functions) ou frontend (React), os Agentes de IA e desenvolvedores DEVEM respeitar as seguintes premissas:
+### Por que Supabase aqui (sem backend próprio)
+Prazo de hackathon não comporta implementar auth, RLS manual e pub/sub do zero, nem manter um segundo serviço (Go) rodando/deployado em paralelo. Supabase resolve auth, Realtime (painel do professor ao vivo, gatilhos de conteúdo, tudo via `postgres_changes`) e controle de acesso (RLS) de uma vez, direto no banco — não só na aplicação. Edge Functions cobrem o único caso que precisa de segredo de servidor (chamada à IA do tutor).
 
-### A. Gestão de Dopamina e Neurociência do Hábito
-- **Tamanho Percebido da Tarefa vs. Energia de Realização**: O cérebro economiza energia biológica. As missões do *Intercepta* devem ter duração de **3 a 5 minutos** (tarefas percebidas como pequenas) para diminuir o atrito e quebrar a inércia em momentos de baixa força de vontade.
-- **Métricas Não-Aditivas**: O sistema **NUNCA** deve exibir métricas baseadas em "tempo logado" ou "tempo de tela", pois induzem ao vício digital. O placar deve registrar estritamente **"Trocas de impulso por estudo"** (vitórias comportamentais).
+## O princípio de dados que rege tudo
 
-### B. Diretrizes de IA na Educação (MEC 2026) & ECA Digital
-- **Centralidade do Educador (Human-in-the-Loop)**: A tecnologia é ferramenta de apoio à mediação docente. O *Modo Aula* depende da abertura e condução do professor.
-- **Tutor Restrito (Metacognição e Aprendizagem Ativa)**: O tutor de IA **NUNCA** deve entregar a resposta pronta ao aluno. A IA deve usar questionamento socrático (scaffolding) para estimular a autorregulação e a autoria intelectual.
+**Um evento, três agregações.** Toda ação (entrar/sair de sessão, responder atividade, completar missão, check-in de humor) grava uma linha em `student_events` (`event_type` + `payload_json`). Aluno, professor e escola nunca têm tabelas separadas — têm **políticas RLS diferentes** sobre a mesma tabela:
 
+- Aluno: `student_id = auth.uid()` — só vê o próprio dado, sempre (policy `student_events_select_own`).
+- Professor: agregado por `session_id` (via join com `sessions.teacher_id = auth.uid()`), nunca dá pra listar qual aluno especificamente errou ou saiu do foco — a policy `student_events_select_teacher_activity_answers` só libera `event_type = 'activity_answer'`, nunca `checkin_humor`. Se uma feature nova expõe isso, pare e pergunte antes de implementar.
+- Escola: agregado por `class_id`/`school_id` ao longo do tempo via função/view com k-anonimato (mínimo de alunos distintos por grupo) — nunca por aluno, nunca por sessão individual. Views/funções de agregação da escola bypassam a RLS da tabela base de propósito (rodam com privilégio de quem as criou), então a segurança vem do filtro embutido na própria query (escola do chamador + role), não de RLS na view — visto que views não suportam RLS própria.
 
----
+Isso não é só arquitetura, é a defesa de privacidade do produto. Trate como regra de negócio inviolável, não como detalhe de implementação. Nomenclatura real das tabelas (inglês, já implementado): `users`, `schools`, `classes`, `sessions`, `activities`, `student_events`, `domain_progress`, `intercepta_missions`, `student_risk_windows` — ver `produto.md` § Modelo de dados.
 
-## 3. Arquitetura e Stack Tecnológica
+## Regras de mecânica de produto (não inverter sem confirmar com o time)
 
-### Stack Overview
-```text
-[ React (Vite + TS + Tailwind) ] <---> [ Supabase Client / Realtime ] ---> [ Supabase PostgreSQL DB ]
-                                                  |                              ^
-                                                  +---> [ Edge Functions ] ------+ (RLS Policies)
-                                                        (LLM Tutor Restrito, etc.)
-```
+- **O app nunca silencia o celular no nível do sistema operacional.** "Modo foco" é só dentro da própria experiência (tela cheia + Page Visibility API). Isso é limite técnico de PWA — se alguém pedir pra implementar silenciamento real de notificações de outros apps, isso exige app nativo com Accessibility Service e está fora de escopo. Não gastar tempo tentando.
 
-### Stack Detail
-- **Frontend (`/web`)**: React 18+, TypeScript, Vite, Tailwind CSS, TanStack Query (React Query) para cache/fetches, Zustand para gerenciamento de estado global leve, `@supabase/supabase-js`.
-- **Backend**: Nenhum servidor próprio no MVP. Regra de negócio vive em Postgres functions/RLS (dado) e Supabase Edge Functions em `/supabase/functions` (lógica que precisa de segredo/servidor, ex: chamada ao LLM do Tutor Restrito), autenticadas via JWT do Supabase Auth.
-- **Banco de Dados & Infra (`/supabase`)**: Supabase PostgreSQL, Migrations gerenciadas via Supabase CLI, Row Level Security (RLS) estrito para garantia de isolamento de dados por papel (`student`, `teacher`, `school_admin`).
+- **Saída de sessão/missão é graciosa.** Nunca implementar lógica que penalize ou zere progresso coletivo quando um aluno sai. Ele perde só o bônus daquele momento; o progresso acumulado (PF, Domínio) nunca regride.
+- **Pontos de Foco (PF) recompensam decisão, não tempo de tela.** Nunca criar uma métrica ou campo que meça "tempo total no app" como sinal de sucesso — isso contradiz o propósito do produto. Métrica correta: contagem de missões/atividades completadas.
+- **Tutor de IA nunca entrega resposta pronta.** Qualquer mudança no prompt de sistema do tutor precisa preservar isso — é o motivo do tutor existir.
 
----
+## Segurança — não negociável mesmo sob pressão de tempo
 
-## 4. Estrutura do Repositório
+Dados aqui são de menores de idade (alunos de Fundamental 2 e Médio) e incluem estado emocional (check-in de humor). Trate como dado sensível por padrão.
 
-```directory
-/fokido
-├── web/                   # Frontend React (Mobile-First SPA/PWA)
-│   ├── src/
-│   │   ├── assets/        # Ícones e imagens
-│   │   ├── components/    # UI components (ModoAula, InterceptaCard, ChatTutor, CheckinHumor)
-│   │   ├── hooks/         # Custom hooks (useRealtimeSession, useAuth, useCheckin)
-│   │   ├── pages/         # Páginas por ator (/aluno, /professor, /escola)
-│   │   ├── services/      # Supabase Client
-│   │   ├── store/         # Zustand stores (useUserStore, useSessionStore)
-│   │   ├── types/         # Definições TypeScript
-│   │   ├── App.tsx
-│   │   └── main.tsx
-│   ├── package.json
-│   └── vite.config.ts
-└── supabase/              # Schema, Migrations, RLS e Edge Functions
-    ├── migrations/        # Arquivos de migração SQL
-    │   ├── 00001_initial_schema.sql
-    │   ├── 00002_extensions.sql
-    │   ├── 00003_rls_policies.sql
-    │   └── 00004_seed_demo.sql
-    ├── functions/         # Edge Functions (Deno/TS) — ex: tutor-restrito
-    └── config.toml
-```
+- **RLS habilitada em toda tabela desde a criação.** Nunca criar tabela no Supabase sem policy — nem "temporariamente pra testar". Uma tabela sem RLS com Supabase Auth ativo é aberta pra qualquer usuário autenticado.
+- **RBAC nas três roles (aluno/professor/school_admin)** aplicado via RLS — não existe backend próprio pra validar de novo, então a policy é a única linha de defesa real. Não confie em esconder botão no frontend como controle de acesso.
+- **Prevenção de IDOR é responsabilidade da policy RLS.** Toda policy que recebe um ID (session_id, activity_id, student_id) via subquery deve checar que `auth.uid()` tem relação legítima com aquele recurso (ex.: `session_id in (select id from sessions where teacher_id = auth.uid())`) — nunca uma policy que libere leitura/escrita só por "a linha existe".
+- **Chave de API de IA nunca no frontend.** Fica em um secret da Edge Function `tutor-restrito` (`supabase secrets set`), lido via `Deno.env.get(...)` dentro da function. Frontend só chama `supabase.functions.invoke('tutor-restrito', ...)` — nunca vê a chave, nunca chama o provedor de IA direto.
+- **Service role key do Supabase nunca no frontend/Vite** (`VITE_*` é exposto no bundle). Frontend usa só a anon key + RLS. Se uma agregação legítima precisar cruzar RLS (ex.: visão da escola), a saída é uma view/função `SECURITY DEFINER`-like que já embute o filtro de segurança na própria query (ver princípio de dados acima) — não expor a service role key em lugar nenhum do client.
+- **LGPD:** dado de humor/foco é dado sensível de criança/adolescente. Ao adicionar qualquer novo campo de coleta, perguntar: isso precisa ser identificável, ou dá pra agregar/anonimizar? Preferir agregação sempre que a feature permitir (ver princípio de dados acima).
 
----
+## Convenções de código
 
-## 5. Modelagem de Dados e Segurança (Supabase RLS)
+- **React:** componentes funcionais, TypeScript estrito (proibido `any`), Tailwind para estilo — sem CSS solto. Hooks (`web/src/hooks`) fazem toda a leitura/escrita no Supabase; componentes (`web/src/components`) são presentacionais, recebem dado e callbacks via props — hook mora na página (`web/src/pages`), não dentro do componente, salvo exceção documentada (ex.: um widget autocontido tipo `ChatTutor` que não deve acoplar sua própria chamada de IA ao contrato de props do componente pai).
+- **Realtime:** Supabase Realtime `postgres_changes`, filtrado por `session_id`/`student_id` conforme a policy RLS permitir — é o mesmo mecanismo usado pro painel ao vivo do professor, pro aluno saber quando uma atividade nova foi lançada, e é o que vai alimentar os gatilhos de conteúdo (professor → aluno).
+- **Migrations:** SQL puro em `supabase/migrations/`, aplicadas via `npx supabase db query --db-url "$DATABASE_URL" --file <path>` (projeto usa Supabase Cloud, não Docker local — `db push`/`db reset` têm bug confirmado com senha percent-encoded). Arquivo com mais de um statement precisa ser aplicado em partes separadas — o CLI rejeita multi-statement em um único `--file`.
+- **Nomenclatura em inglês no schema** (`sessions`, `student_events`, `domain_progress`) é o que já está implementado e testado — manter consistência com o schema real, não com o rascunho em português do `produto.md` (que ficou desatualizado nesse ponto; ver a nota na própria seção "Modelo de dados" de lá).
 
-### Schema Fundamental (Exemplo)
-- `users`: `id`, `email`, `role` (`student`, `teacher`, `school_admin`), `school_id`, `created_at`.
-- `classes`: `id`, `school_id`, `teacher_id`, `name`, `code`.
-- `sessions`: `id`, `class_id`, `teacher_id`, `code` (4 dígitos), `status` (`active`, `finished`), `created_at`.
-- `activities`: `id`, `session_id`, `type` (`quiz`, `open_question`, `poll`), `content_json`.
-- `student_events`: `id`, `student_id`, `session_id`, `event_type` (`checkin_humor`, `activity_answer`, `intercepta_mission`), `payload_json`, `created_at`.
+## O que NÃO fazer, mesmo se parecer mais rápido
 
-### Regras de Ouro de RLS (Row Level Security)
-1. **Dados de Humor / Raio-X**: O aluno pode `INSERT` e `SELECT` apenas registros onde `student_id = auth.uid()`. NENHUM professor ou escola pode ler linhas individuais de `student_events` onde `event_type = 'checkin_humor'`.
-2. **Dados do Professor**: O professor acessa visões agregadas em tempo real (`VIEW session_live_stats`) calculadas via `COUNT` / `AVG` sem expor respostas sensíveis individuais quando anonimizadas.
-3. **Dados da Escola**: Consultas para a visão da escola DEVEM utilizar `GROUP BY class_id, date` com contagem mínima por lote (k-anonimato) para evitar reidentificação.
+- Não guardar a service role key do Supabase em variável de ambiente do frontend/Vite (`VITE_*` é exposto no bundle).
+- Não criar policy/view que devolva lista de alunos com nome + métrica individual de foco/erro pro professor ou escola — viola o princípio de dados.
+- Não implementar qualquer forma de "streak" ou penalidade por não usar o app em determinado dia — contradiz a regra de saída graciosa.
+- Não pular RLS "só pra essa tabela de teste" — vira dívida técnica que ninguém lembra de arrumar antes da demo.
+- Não subir um backend próprio (Go ou qualquer outro) pra "resolver" algo que RLS ou uma Edge Function já resolvem — decisão já tomada, ver "Por que Supabase aqui" acima.
 
----
+## Escopo do MVP (12h) — não expandir sem necessidade
 
-## 6. Diretrizes para Agentes de Código (Prompting & Coding Rules)
+Dentro do prazo: Modo Aula + Acompanhamento de Aula (sessão + QR + configuração por toggles + painel do professor + humor agregado + gatilhos de conteúdo em tempo real com legenda de acessibilidade + botão "não entendi" acionando o tutor contextualizado + botão de dúvida agregado), Intercepta (missão fora da escola, absorve o que seria "Desafios"), Tutor restrito, Check-in de humor + Raio-X (pode usar dado pré-populado pra demo), Trilha de Domínio simples, medidor coletivo simples.
 
-Quando um Agente de IA estiver gerando código neste repositório, DEVE seguir estas diretrizes:
-
-### A. Regras para Backend (Supabase Edge Functions)
-- Toda lógica que precisa de segredo (API key de LLM, etc.) ou bypass de RLS vai em Edge Function (`/supabase/functions`), nunca no client.
-- Tratamento rigoroso de erros: Nunca ignorar erros silenciosamente. Retornar respostas JSON padronizadas: `{"error": "mensagem clara", "code": 400}`.
-- Autenticação: Extrair `user_id` e `role` a partir do JWT do Supabase Auth (`Authorization` header), validado via `supabase.auth.getUser()`.
-- Conectividade Resiliente: Tratar retentativas com backoff exponencial para ambientes de sala de aula com wi-fi instável.
-- Regra de dado que não precisa de segredo (agregação, validação simples) fica em Postgres function/RLS, não em Edge Function.
-
-### B. Regras para Frontend (React + TypeScript)
-- **Mobile-First e Navegador Puro**: O aluno entra pelo navegador do celular sem instalar nada. Design deve ser totalmente responsivo (viewports de 360px a 430px para smartphones).
-- **Sem Bundles Pesados**: Mantenha o tempo de carregamento inicial mínimo para funcionar bem no 3G/4G dos alunos.
-- **Tipagem Estrita**: Proibido usar `any`. Defina interfaces claras em `web/src/types`.
-- **Feedback Visual Imediato**: Ações do Modo Aula (enviar resposta, check-in) devem fornecer feedback tátil/visual instantâneo com estados otimistas.
-
-### C. Regras para o Tutor Restrito (Prompt da IA)
-O prompt do sistema para a Edge Function do Tutor Restrito deve seguir este modelo rígido:
-```text
-Você é o Tutor Restrito do Fokido, um assistente pedagógico para estudantes do Ensino Fundamental II e Ensino Médio.
-REGRAS INEGOCIÁVEIS:
-1. NUNCA forneça a resposta pronta para a pergunta do aluno.
-2. Responda SEMPRE com uma pergunta orientadora, uma dica conceitual ou uma decomposição do problema em etapas menores.
-3. Se o aluno pedir a resposta direta, explique gentilmente que seu papel é ajudá-lo a pensar e raciocinar por conta própria.
-4. Mantenha o tom encorajador, simples e focado no conteúdo da aula do dia.
-```
-
----
-
-## 7. Workflow de Desenvolvimento e Comandos
-
-### Executando Localmente
-- **Supabase Local**: `supabase start`
-- **Edge Functions**: `supabase functions serve`
-- **Frontend React**: `cd web && npm run dev`
-
-### Testes e Qualidade
-- **React Lint & Build (typecheck)**: `cd web && npm run lint && npm run build`
-- **Testes de componente**: `cd web && npm test`
-- **Supabase RLS Tests**: Garantir que as migrations possuem testes de políticas RLS.
-
----
-*Documento mantido pelo time de Engenharia e Produto do Fokido. Atualizado em 2026.*
+Fora do MVP, não implementar sem alinhar antes: bloqueio nativo de outros apps / modo silencioso de sistema (exige Accessibility Service, é app nativo — fora de escopo de PWA), painel completo de controle parental, geração automática de missão via IA a partir de resumo do professor, suporte a Fundamental 1, importação/geração de slides, gestão de notas e faltas, fluxo de laboratório com registro fotográfico, desafios em formato livre de vídeo/arquivo, adaptação de conteúdo baseada em histórico de notas/desempenho (o "não entendi" sob demanda cobre a mesma necessidade), transcrição automática de voz (só se testada e confiável no aparelho da demo — Web Speech API é inconsistente em Safari/iOS).
