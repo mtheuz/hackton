@@ -93,7 +93,14 @@ turma inteira.
 - `useTeacherSession`:
   - `startSession(classId: string, config: SessionConfig)` — inclui as 5
     colunas no insert.
-  - `session: LiveSession` ganha `config: SessionConfig`.
+  - novo campo de retorno `sessionConfig: SessionConfig | null` —
+    **separado** de `session` (que continua só `{ id, code, status }`).
+    Só o professor usa `sessionConfig` (pra decidir se mostra o campo de
+    legenda); o aluno não precisa saber os toggles da sessão, já que a
+    legenda vem embutida em cada `ContentTrigger`. Manter `LiveSession`
+    (tipo compartilhado com `useLiveSession`/`ModoAulaAluno`) sem mudança
+    evita alterar hook/componente/testes do lado do aluno que não
+    precisam desse dado.
   - novo `sendContentTrigger(type: ContentTriggerType, content: string,
     accessibilityCaption?: string): Promise<void>` — insere em
     `content_triggers` usando `session.id`.
@@ -124,7 +131,8 @@ export interface ContentTrigger {
 }
 ```
 
-`LiveSession` ganha o campo `config: SessionConfig`.
+`LiveSession` (existente) não muda — ver nota acima sobre `sessionConfig`
+ser um campo de retorno separado, não embutido nele.
 
 ## Testes
 
