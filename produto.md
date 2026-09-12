@@ -39,17 +39,23 @@ Toque rápido de humor antes de cada sessão. Com o dado acumulado, o aluno rece
 Um único evento (`entrou`, `saiu`, `completou_missão`, `check-in`, `respondeu`) alimenta três visões diferentes: aluno vê só o seu (privado), professor vê o agregado da sala em tempo real, escola vê o agregado por turma ao longo do tempo. Mesma tabela de dados, três filtros — não triplica o trabalho.
 
 ## Decisões técnicas já travadas
-- **PWA, não app nativo.** Sem bloqueio de sistema — medimos presença (Page Visibility API), não vigiamos o aparelho. Zero fricção de instalação, zero permissão invasiva.
+- **PWA, não app nativo.** Sem bloqueio de sistema — medimos presença (Page Visibility API), não vigiamos o aparelho. Zero fricção de instalação, zero permissão invasiva. *(presença via Page Visibility API ainda não implementada — hoje "sair" da aula é só um reset de estado local, sem rastrear o momento de saída.)*
 - **Saída da sessão é graciosa.** Perde o bônus daquele momento, nunca o progresso acumulado. Sem punição coletiva (diferente do Forest, que mata a árvore de todo mundo quando alguém sai).
-- **Stack:** Go (sessões/eventos, WebSocket ou polling) + React/TS (front) + Postgres (dados de sessão/humor/PF) + API de IA só no tutor (testar rate limit antes de domingo).
+- **Stack (atualizado — sem Go):** React/TS (front) + Supabase (Postgres, Auth, Realtime, RLS) direto via `@supabase/supabase-js`, sem backend próprio. Lógica que precisa de segredo (chamada ao LLM do Tutor Restrito) vive em Supabase Edge Functions (Deno/TS), nunca no client. Ver `CLAUDE.md` §3 pra arquitetura completa — essa decisão substitui o "Go + WebSocket/polling" original.
 
-## Modelo de dados (rascunho)
-- **usuarios** (id, papel: aluno/professor/coordenador, escola_id, turma_id)
-- **sessoes** (id, professor_id, turma_id, atividade_id, criada_em, encerrada_em)
-- **eventos** (id, usuario_id, sessao_id ou missao_id, tipo, valor, pf_gerado, timestamp)
-- **atividades** (id, professor_id, materia, enunciado, tipo, gabarito_ou_criterio)
-- **missoes_intercepta** (id, atividade_id, aluno_id, horario_disparo, completada_em)
-- **dominio_materia** (aluno_id, materia, nivel, pf_acumulado)
+## Modelo de dados
+Schema real implementado (nomes em inglês, RLS por linha) — ver `CLAUDE.md`
+§5 como fonte de verdade. Resumo: `users` (com `role`, `school_id`),
+`schools`, `classes`, `sessions` (Modo Aula), `activities` (quiz/poll/
+open_question), `student_events` (tabela única de eventos —
+`checkin_humor`, `intercepta_mission`, `activity_answer`),
+`domain_progress` (Trilha de Domínio por matéria), `intercepta_missions`,
+`student_risk_windows` (existe no schema, ainda não alimentada por nenhum
+onboarding — ver "Status de implementação" abaixo).
+
+O rascunho original em português (`usuarios`, `sessoes`, `eventos`...) foi
+substituído por esse schema durante a implementação; removido daqui pra não
+ter duas fontes de verdade divergentes.
 
 ## Fora do MVP de domingo (vira "próximos passos" no pitch)
 Bloqueio nativo de outros apps (exige Accessibility Service = app nativo), painel completo de controle parental, suporte a Fundamental 1, geração automática de missões por IA a partir de resumo do professor.
@@ -79,7 +85,7 @@ Bloqueio nativo de outros apps (exige Accessibility Service = app nativo), paine
 4. **Chat do tutor** (modal) — pergunta-guia, nunca a resposta pronta.
 5. **Tela de transição** — progresso visual da turma, sem nomes.
 6. **Fim da sessão** — "colheita": medidor coletivo atualizado + PF ganhos.
-7. **Raio-X privado** — tempo de foco, saídas, insight humor×foco (pré-populado na demo).
+7. **Raio-X privado** — humor ao longo do tempo, trocas de impulso por estudo, insight humor×engajamento (pré-populado na demo). *(Nunca tempo logado/tempo de tela — regra de ouro do produto, ver CLAUDE.md §2.A. Esta linha dizia "tempo de foco, saídas" na versão original; corrigido pra não contradizer a própria regra.)*
 
 ## D) Fluxo do Aluno — fora da escola (Intercepta)
 1. **Notificação** no horário de risco: *"Que tal 5 min de [matéria] em vez do scroll?"*
@@ -95,3 +101,44 @@ Bloqueio nativo de outros apps (exige Accessibility Service = app nativo), paine
 1. **Login da coordenação.**
 2. **Painel semanal por série/turma** (nunca por aluno): sessões pedagógicas registradas (compliance com a Lei 15.100), tendência agregada de humor, ranking de PF coletivo por turma (pra decidir recompensas reais).
 3. **Nenhum drill-down individual** — privacidade é regra de design, não promessa verbal.
+
+---
+
+# Status de implementação
+
+*(Atualizado conforme o build avança — reflete o estado real do código, não
+a visão original. Ver `docs/superpowers/specs/` e `docs/superpowers/plans/`
+para o histórico de decisões de cada peça.)*
+
+## Feito
+- **Login + roteamento por papel** (aluno/professor/school_admin), sessão
+  persistida (`useAuthStore`).
+- **Intercepta**: missão de 3-5min (quiz), placar "Trocas de impulso por
+  estudo" (nunca tempo), botão de simulação pra demo (sem detecção real de
+  impulso ainda).
+- **Check-in de humor + Raio-X privado**: check-in de 1 toque, histórico
+  recente, RLS estrito (só o próprio aluno lê).
+- **Trilha de Domínio**: progresso por matéria (nível + PF acumulado),
+  hoje como lista dentro do `AlunoHome` — não como tela própria (item E do
+  fluxo de telas).
+- **Modo Aula (loop completo)**: professor cria sessão com código de 4
+  dígitos (sem QR ainda), lança quiz/enquete/pergunta aberta, vê tally ao
+  vivo; aluno entra pelo código e responde em tempo real. **Não gera PF**
+  — desvio deliberado do produto original (que queria aula alimentando a
+  Trilha de Domínio); reavaliar se fizer sentido reconectar.
+- **Painel da Escola**: sinais agregados por escola (humor médio, trocas de
+  impulso, respostas no Modo Aula) via função Postgres com k-anonimato
+  (mínimo 5 registros/dia). Por escola inteira, não por turma — falta
+  matrícula aluno↔turma no schema pra granularidade por turma.
+- **Tutor Restrito**: Edge Function pronta (Socrático, nunca entrega
+  resposta, scoped ao JWT do aluno) — sem UI de chat ainda.
+
+## Não implementado (visão original, sem código ainda)
+- Onboarding (boas-vindas, pacto pessoal, horários de risco).
+- QR code pra entrar na aula (só código digitado).
+- "Desafio da semana" (professor dobra PF de uma atividade).
+- "Medidor coletivo da turma" (barra que só cresce, nunca regride).
+- UI de chat do Tutor Restrito.
+- Recompensa física negociada com a escola (fora do escopo de código —
+  é processo, não feature).
+- Presença via Page Visibility API / saída rastreada da sessão.
