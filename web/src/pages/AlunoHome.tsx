@@ -5,12 +5,14 @@ import { useInterceptaMission } from '../hooks/useInterceptaMission';
 import { useDomainProgress } from '../hooks/useDomainProgress';
 import { useMoodCheckins } from '../hooks/useMoodCheckins';
 import { useMoodPerformance } from '../hooks/useMoodPerformance';
+import { useStreak } from '../hooks/useStreak';
 import { useLiveSession } from '../hooks/useLiveSession';
 import { InterceptaCard } from '../components/InterceptaCard';
 import { MoodCheckInOverlay } from '../components/MoodCheckInOverlay';
 import { LogoutButton } from '../components/LogoutButton';
 import { ModoAulaAluno } from '../components/ModoAulaAluno';
 import { MoodPerformanceInsight } from '../components/MoodPerformanceInsight';
+import { StreakBadge } from '../components/StreakBadge';
 import { ChatTutor } from '../components/ChatTutor';
 import { AlunoTabBar, type AlunoTab } from '../components/AlunoTabBar';
 import EmptyProgressIcon from '~icons/streamline-ultimate-color/picture-sun';
@@ -30,6 +32,7 @@ export function AlunoHome() {
   const { progress } = useDomainProgress(studentId);
   const { buckets: moodPerformance } = useMoodPerformance(studentId);
   const { recentMoods, loading: moodLoading, checkin } = useMoodCheckins(studentId);
+  const { streak, activeToday } = useStreak(studentId);
   const {
     session: liveSession,
     activity: liveActivity,
@@ -78,6 +81,7 @@ export function AlunoHome() {
             <h1 className="text-base font-semibold text-ink-700">{user.name}</h1>
           </div>
           <div className="flex items-center gap-2">
+            <StreakBadge streak={streak} activeToday={activeToday} />
             <div className="flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5">
               <SynchronizeArrowIcon aria-hidden className="h-4 w-4" />
               <span className="text-xs font-semibold text-brand-600">{completedCount}</span>

@@ -67,6 +67,27 @@ export function useInterceptaMission(studentId: string): UseInterceptaMissionRes
     };
   }, [studentId, refetch]);
 
+  const triggerNextMission = useCallback(
+    async (excludeActivityId?: string) => {
+      if (!studentId) return;
+      const { data } = await supabase.from('activities').select('id').eq('type', 'quiz');
+      let activities = (data ?? []) as { id: string }[];
+      if (excludeActivityId && activities.length > 1) {
+        activities = activities.filter((a) => a.id !== excludeActivityId);
+      }
+      if (activities.length === 0) return;
+
+      const chosen = activities[Math.floor(Math.random() * activities.length)];
+      const { error } = await supabase.from('intercepta_missions').insert({
+        student_id: studentId,
+        activity_id: chosen.id,
+        trigger_time: new Date().toISOString(),
+      });
+      if (error) throw error;
+    },
+    [studentId],
+  );
+
   const completeMission = useCallback(
     async (selectedIndex: number) => {
       if (!mission) return;
@@ -104,26 +125,16 @@ export function useInterceptaMission(studentId: string): UseInterceptaMissionRes
       });
       if (progressError) throw progressError;
 
+      await triggerNextMission(mission.activityId);
       await refetch();
     },
-    [mission, studentId, refetch],
+    [mission, studentId, refetch, triggerNextMission],
   );
 
   const simulateImpulse = useCallback(async () => {
-    if (!studentId) return;
-    const { data } = await supabase.from('activities').select('id').eq('type', 'quiz');
-    const activities = (data ?? []) as { id: string }[];
-    if (activities.length === 0) return;
-
-    const chosen = activities[Math.floor(Math.random() * activities.length)];
-    const { error } = await supabase.from('intercepta_missions').insert({
-      student_id: studentId,
-      activity_id: chosen.id,
-      trigger_time: new Date().toISOString(),
-    });
-    if (error) throw error;
+    await triggerNextMission();
     await refetch();
-  }, [studentId, refetch]);
+  }, [triggerNextMission, refetch]);
 
   return { mission, completedCount, loading, completeMission, simulateImpulse };
 }
