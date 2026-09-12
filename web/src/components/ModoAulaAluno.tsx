@@ -8,6 +8,7 @@ interface ModoAulaAlunoProps {
   answered: boolean;
   joining: boolean;
   joinError: string | null;
+  initialCode?: string;
   onJoin: (code: string) => Promise<void>;
   onSubmitAnswer: (payload: { selectedIndex?: number; text?: string }) => Promise<void>;
   onLeave: () => void;
@@ -38,11 +39,12 @@ export function ModoAulaAluno({
   answered,
   joining,
   joinError,
+  initialCode,
   onJoin,
   onSubmitAnswer,
   onLeave,
 }: ModoAulaAlunoProps) {
-  const [code, setCode] = useState('');
+  const [code, setCode] = useState(initialCode ?? '');
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 

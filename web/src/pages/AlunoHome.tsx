@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { useInterceptaMission } from '../hooks/useInterceptaMission';
 import { useDomainProgress } from '../hooks/useDomainProgress';
@@ -38,7 +39,10 @@ export function AlunoHome() {
     leave: leaveLiveSession,
   } = useLiveSession(studentId);
 
-  const [tab, setTab] = useState<AlunoTab>('intercepta');
+  const [searchParams] = useSearchParams();
+  const codeFromUrl = searchParams.get('code') ?? undefined;
+
+  const [tab, setTab] = useState<AlunoTab>(codeFromUrl ? 'aula' : 'intercepta');
   const [moodPromptDismissed, setMoodPromptDismissed] = useState(false);
   const [tutorOpen, setTutorOpen] = useState(false);
   const sessionActive = liveSession?.status === 'active';
@@ -108,6 +112,7 @@ export function AlunoHome() {
             answered={liveAnswered}
             joining={liveJoining}
             joinError={liveJoinError}
+            initialCode={codeFromUrl}
             onJoin={joinLiveSession}
             onSubmitAnswer={submitLiveAnswer}
             onLeave={leaveLiveSession}

@@ -16,7 +16,7 @@ function chainable(result: { data: unknown; error: unknown }) {
 
 const disciplinesBuilder = chainable({ data: [{ id: 'disc-1', name: 'Matemática' }], error: null });
 
-const fromMock = vi.fn(() => disciplinesBuilder);
+const fromMock = vi.fn((_table: string) => disciplinesBuilder);
 
 vi.mock('../services/supabaseClient', () => ({
   supabase: { from: (table: string) => fromMock(table) },

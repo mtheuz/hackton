@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
 import GearIcon from '~icons/twemoji/gear';
 import MegaphoneIcon from '~icons/twemoji/megaphone';
 import type {
@@ -180,7 +181,10 @@ export function ModoAulaProfessor({
         </button>
       </div>
       <p className="mt-2 text-3xl font-bold tracking-widest text-brand-600">{session.code}</p>
-      <p className="text-xs text-ink-500">Peça pros alunos entrarem com esse código.</p>
+      <p className="text-xs text-ink-500">Peça pros alunos entrarem com esse código ou escanear o QR.</p>
+      <div className="mt-3 flex justify-center rounded-xl bg-white p-4">
+        <QRCodeSVG value={`${window.location.origin}/aluno?code=${session.code}`} size={192} />
+      </div>
 
       {activity && !showLauncher ? (
         <div className="mt-4 rounded-xl border border-line-200 p-4">
