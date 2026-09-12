@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from './pages/LoginPage';
 import { AlunoHome } from './pages/AlunoHome';
 import { ProfessorHome } from './pages/ProfessorHome';
@@ -17,10 +17,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/aluno" element={<RequireRole role="student"><AlunoHome /></RequireRole>} />
         <Route path="/professor" element={<RequireRole role="teacher"><ProfessorHome /></RequireRole>} />
         <Route path="/escola" element={<RequireRole role="school_admin"><EscolaHome /></RequireRole>} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
   );
