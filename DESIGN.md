@@ -15,7 +15,7 @@ O objetivo visual é criar uma aplicação:
 - Consistente
 - Levemente gamificada
 
-A referência visual utiliza interfaces claras, cards arredondados, bastante espaço em branco, roxo como cor de destaque e informações apresentadas de forma simples e visual.
+A referência visual utiliza interfaces claras, cards arredondados, bastante espaço em branco, azul (Notion Blue) como cor de destaque e informações apresentadas de forma simples e visual.
 
 ---
 
@@ -47,7 +47,7 @@ Utilize:
 - Tipografia moderna
 - Ícones minimalistas
 - Bastante whitespace
-- Roxo como principal cor de ação
+- Azul (Notion Blue) como principal cor de ação
 - Cores pastel para elementos secundários
 
 Evite:
@@ -67,12 +67,15 @@ Evite:
 
 Utilize os seguintes tokens como base:
 
+> Valores abaixo espelham os tokens reais em `web/src/index.css` (fonte de
+> verdade) — ver `docs/brand-guidelines.md` para a justificativa de cada um.
+
 ```css
 :root {
-  --primary: #7C5CFC;
-  --primary-hover: #6D4EE8;
-  --primary-light: #A78BFA;
-  --primary-soft: #F1EDFF;
+  --primary: #0E5A96;
+  --primary-hover: #0B4878;
+  --primary-light: #14699F;
+  --primary-soft: #EAF2F9;
 
   --background: #F8F8FC;
   --surface: #FFFFFF;
