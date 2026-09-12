@@ -10,13 +10,16 @@ interface CheckinRow {
 
 export function useMoodCheckins(studentId: string): {
   recentMoods: MoodCheckin[];
+  loading: boolean;
   checkin: (mood: MoodValue) => Promise<void>;
 } {
   const [recentMoods, setRecentMoods] = useState<MoodCheckin[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
     if (!studentId) {
       setRecentMoods([]);
+      setLoading(false);
       return;
     }
     const { data } = await supabase
@@ -29,6 +32,7 @@ export function useMoodCheckins(studentId: string): {
 
     const rows = (data ?? []) as CheckinRow[];
     setRecentMoods(rows.map((row) => ({ id: row.id, mood: row.payload_json.mood, createdAt: row.created_at })));
+    setLoading(false);
   }, [studentId]);
 
   useEffect(() => {
@@ -50,5 +54,5 @@ export function useMoodCheckins(studentId: string): {
     [studentId, refetch],
   );
 
-  return { recentMoods, checkin };
+  return { recentMoods, loading, checkin };
 }

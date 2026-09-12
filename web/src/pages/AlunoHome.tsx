@@ -29,6 +29,7 @@ export function AlunoHome() {
   const {
     session: liveSession,
     activity: liveActivity,
+    contentTrigger: liveContentTrigger,
     answered: liveAnswered,
     joining: liveJoining,
     joinError: liveJoinError,
@@ -103,6 +104,7 @@ export function AlunoHome() {
           <ModoAulaAluno
             session={liveSession}
             activity={liveActivity}
+            contentTrigger={liveContentTrigger}
             answered={liveAnswered}
             joining={liveJoining}
             joinError={liveJoinError}

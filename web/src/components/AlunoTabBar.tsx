@@ -12,7 +12,7 @@ interface AlunoTabBarProps {
 
 const TABS: { id: AlunoTab; label: string; Icon: typeof GraduationCapIcon }[] = [
   { id: 'aula', label: 'Aula', Icon: GraduationCapIcon },
-  { id: 'intercepta', label: 'Intercepta', Icon: SynchronizeArrowIcon },
+  { id: 'intercepta', label: 'Desafio', Icon: SynchronizeArrowIcon },
   { id: 'progresso', label: 'Progresso', Icon: AnalyticsBarsIcon },
 ];
 

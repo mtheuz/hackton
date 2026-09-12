@@ -1,0 +1,18 @@
+{
+  "name": "Fokido",
+  "short_name": "Fokido",
+  "description": "Plataforma de aprendizagem ativa e uso consciente de smartphones",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "theme_color": "#0E5A96",
+  "background_color": "#F8F8FC",
+  "display": "standalone",
+  "start_url": "/",
+  "orientation": "portrait"
+}
