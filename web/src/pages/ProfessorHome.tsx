@@ -53,6 +53,25 @@ export function ProfessorHome() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 p-4 pb-24 sm:p-6">
+        <section className="relative mt-6 rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+          <div className="pr-24 sm:pr-28">
+            <span className="inline-block rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-600">
+              Painel do Professor
+            </span>
+            <h2 className="mt-1 text-base font-bold text-ink-700">
+              Olá, Prof. {user.name.split(' ')[0]}! 📋
+            </h2>
+            <p className="mt-1 text-xs leading-relaxed text-ink-500">
+              Gerencie suas turmas, inicie sessões ativas e acompanhe o engajamento em tempo real.
+            </p>
+          </div>
+          <img
+            src="/professor-mascot.png"
+            alt="Mascote Professora Fokido"
+            className="absolute -top-9 -right-1 h-36 w-auto object-contain drop-shadow-2xl transition-transform duration-300 hover:scale-110 pointer-events-none select-none"
+          />
+        </section>
+
         {tab === 'aula' && (
           <ModoAulaProfessor
             classes={classes}
