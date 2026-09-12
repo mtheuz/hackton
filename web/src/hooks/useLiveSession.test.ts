@@ -71,7 +71,7 @@ describe('useLiveSession', () => {
   });
 
   it('joins the session and loads the current activity', async () => {
-    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active' }, error: null };
+    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }, error: null };
     const { result } = renderHook(() => useLiveSession('student-1'));
 
     await act(async () => {
@@ -88,7 +88,7 @@ describe('useLiveSession', () => {
   });
 
   it('submits an answer and marks the activity as answered', async () => {
-    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active' }, error: null };
+    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }, error: null };
     const { result } = renderHook(() => useLiveSession('student-1'));
 
     await act(async () => {
@@ -111,7 +111,7 @@ describe('useLiveSession', () => {
   });
 
   it('loads the most recent content trigger for the session', async () => {
-    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active' }, error: null };
+    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }, error: null };
     const { result } = renderHook(() => useLiveSession('student-1'));
 
     await act(async () => {

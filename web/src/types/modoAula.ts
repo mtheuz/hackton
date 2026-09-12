@@ -56,6 +56,7 @@ export interface SessionConfig {
   focusMode: boolean;
   quizAtEnd: boolean;
   accessibilityMode: boolean;
+  allowTranscription?: boolean;
 }
 
 export type ContentTriggerType = 'formula' | 'note';

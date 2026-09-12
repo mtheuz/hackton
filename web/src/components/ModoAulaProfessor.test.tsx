@@ -32,8 +32,31 @@ describe('ModoAulaProfessor', () => {
       />,
     );
 
+    fireEvent.change(screen.getByLabelText('Tema da aula'), { target: { value: 'Frações' } });
     fireEvent.click(screen.getByText('Iniciar Modo Aula · Turma Demo'));
-    expect(onStartSession).toHaveBeenCalledWith('class-1', NO_CONFIG);
+    expect(onStartSession).toHaveBeenCalledWith('class-1', NO_CONFIG, 'Frações');
+  });
+
+  it('keeps the start button disabled until a topic is filled in', () => {
+    render(
+      <ModoAulaProfessor
+        classes={[{ id: 'class-1', name: 'Turma Demo' }]}
+        session={null}
+        sessionConfig={null}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Iniciar Modo Aula · Turma Demo')).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Tema da aula'), { target: { value: '  ' } });
+    expect(screen.getByText('Iniciar Modo Aula · Turma Demo')).toBeDisabled();
+    fireEvent.change(screen.getByLabelText('Tema da aula'), { target: { value: 'Frações' } });
+    expect(screen.getByText('Iniciar Modo Aula · Turma Demo')).not.toBeDisabled();
   });
 
   it('includes checked toggles in the session config', () => {
@@ -53,9 +76,10 @@ describe('ModoAulaProfessor', () => {
     );
 
     fireEvent.click(screen.getByLabelText('Modo acessibilidade'));
+    fireEvent.change(screen.getByLabelText('Tema da aula'), { target: { value: 'Frações' } });
     fireEvent.click(screen.getByText('Iniciar Modo Aula · Turma Demo'));
 
-    expect(onStartSession).toHaveBeenCalledWith('class-1', { ...NO_CONFIG, accessibilityMode: true });
+    expect(onStartSession).toHaveBeenCalledWith('class-1', { ...NO_CONFIG, accessibilityMode: true }, 'Frações');
   });
 
   it('launches a quiz with the filled question and options', () => {
@@ -63,7 +87,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -90,7 +114,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={{
           id: 'activity-1',
@@ -113,7 +137,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -134,7 +158,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -159,7 +183,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={{ ...NO_CONFIG, accessibilityMode: true }}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -187,7 +211,7 @@ describe('ModoAulaProfessor', () => {
 
 it('blocks empty or duplicate options so the quiz answer index stays valid', () => {
   const onLaunchActivity = vi.fn();
-  render(<ModoAulaProfessor classes={[]} session={{ id: 's1', code: '1234', status: 'active' }} sessionConfig={NO_CONFIG} activity={null} tally={{ kind: 'options', counts: [] }} onStartSession={vi.fn()} onEndSession={vi.fn()} onLaunchActivity={onLaunchActivity} onSendContentTrigger={vi.fn()} />);
+  render(<ModoAulaProfessor classes={[]} session={{ id: 's1', code: '1234', status: 'active', topic: 'Frações' }} sessionConfig={NO_CONFIG} activity={null} tally={{ kind: 'options', counts: [] }} onStartSession={vi.fn()} onEndSession={vi.fn()} onLaunchActivity={onLaunchActivity} onSendContentTrigger={vi.fn()} />);
   fireEvent.change(screen.getByLabelText('Pergunta'), { target: { value: 'Quanto é 2+2?' } });
   fireEvent.change(screen.getByPlaceholderText('Opção 2'), { target: { value: '4' } });
   fireEvent.click(screen.getByLabelText('Opção 2 é a correta'));

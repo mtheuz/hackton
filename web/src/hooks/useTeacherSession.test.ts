@@ -26,6 +26,7 @@ const sessionsBuilder = chainable({
       id: 'session-1',
       code: '1234',
       status: 'active',
+      topic: 'Frações',
       allow_notes: false,
       allow_free_chatbot: false,
       focus_mode: false,
@@ -86,7 +87,7 @@ describe('useTeacherSession', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     await act(async () => {
-      await result.current.startSession('class-1', { ...NO_CONFIG, accessibilityMode: true });
+      await result.current.startSession('class-1', { ...NO_CONFIG, accessibilityMode: true }, 'Frações');
     });
 
     expect(sessionsBuilder.insert).toHaveBeenCalledWith(
@@ -94,6 +95,7 @@ describe('useTeacherSession', () => {
         class_id: 'class-1',
         teacher_id: 'teacher-1',
         status: 'active',
+        topic: 'Frações',
         allow_notes: false,
         allow_free_chatbot: false,
         focus_mode: false,

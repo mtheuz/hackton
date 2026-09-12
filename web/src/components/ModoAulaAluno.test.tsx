@@ -29,7 +29,7 @@ describe('ModoAulaAluno', () => {
     const onSubmitAnswer = vi.fn().mockResolvedValue(undefined);
     render(
       <ModoAulaAluno
-        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
         activity={{
           id: 'activity-1',
           type: 'quiz',
@@ -52,7 +52,7 @@ describe('ModoAulaAluno', () => {
   it('shows the waiting message once answered', () => {
     render(
       <ModoAulaAluno
-        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
         activity={{
           id: 'activity-1',
           type: 'quiz',
@@ -74,7 +74,7 @@ describe('ModoAulaAluno', () => {
   it('shows the latest content trigger with its accessibility caption', () => {
     render(
       <ModoAulaAluno
-        session={{ id: 'session-1', code: '1234', status: 'active' }}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
         activity={null}
         contentTrigger={{
           id: 'trigger-1',
