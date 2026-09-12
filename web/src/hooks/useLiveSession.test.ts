@@ -23,6 +23,10 @@ const activitiesBuilder = chainable(() => ({
   error: null,
 }));
 const studentEventsBuilder = chainable(() => ({ data: null, error: null }));
+const contentTriggersBuilder = chainable(() => ({
+  data: [{ id: 'trigger-1', type: 'formula', content: 'E=mc²', accessibility_caption: null }],
+  error: null,
+}));
 
 const fromMock = vi.fn((table: string) => {
   switch (table) {
@@ -32,6 +36,8 @@ const fromMock = vi.fn((table: string) => {
       return activitiesBuilder;
     case 'student_events':
       return studentEventsBuilder;
+    case 'content_triggers':
+      return contentTriggersBuilder;
     default:
       throw new Error(`unexpected table ${table}`);
   }
@@ -102,5 +108,23 @@ describe('useLiveSession', () => {
       pf_earned: 0,
     });
     expect(result.current.answered).toBe(true);
+  });
+
+  it('loads the most recent content trigger for the session', async () => {
+    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active' }, error: null };
+    const { result } = renderHook(() => useLiveSession('student-1'));
+
+    await act(async () => {
+      await result.current.join('1234');
+    });
+
+    await waitFor(() =>
+      expect(result.current.contentTrigger).toEqual({
+        id: 'trigger-1',
+        type: 'formula',
+        content: 'E=mc²',
+        accessibilityCaption: null,
+      }),
+    );
   });
 });
