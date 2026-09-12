@@ -53,15 +53,19 @@ export function ModoAulaAluno({
   onSubmitAnswer,
   onLeave,
 }: ModoAulaAlunoProps) {
+  const [answerError, setAnswerError] = useState<string | null>(null);
   const [code, setCode] = useState(initialCode ?? '');
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
 
   async function handleAnswer(payload: { selectedIndex?: number; text?: string }) {
+    setAnswerError(null);
     setSubmitting(true);
     try {
       await onSubmitAnswer(payload);
+    } catch {
+      setAnswerError('Sua resposta não foi enviada. Confira a conexão e tente novamente.');
     } finally {
       setSubmitting(false);
     }
@@ -81,24 +85,27 @@ export function ModoAulaAluno({
         {session?.status === 'finished' && (
           <p className="mt-1 text-xs text-ink-500">Aula encerrada. Até a próxima!</p>
         )}
-        <div className="mt-3 flex gap-2">
+        <form onSubmit={(event) => { event.preventDefault(); if (!joining && /^\d{4}$/.test(code)) void onJoin(code); }} className="mt-3 flex gap-2">
           <input
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+            inputMode="numeric"
+            autoComplete="off"
+            pattern="[0-9]{4}"
+            disabled={joining}
             maxLength={4}
             placeholder="Código da aula"
             aria-label="Código da aula"
             className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
           />
           <button
-            type="button"
-            disabled={joining || code.trim().length === 0}
-            onClick={() => void onJoin(code.trim())}
+            type="submit"
+            disabled={joining || !/^\d{4}$/.test(code)}
             className="min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
             {joining ? 'Entrando...' : 'Entrar na aula'}
           </button>
-        </div>
+        </form>
         <button
           type="button"
           onClick={() => setScannerOpen(true)}
@@ -106,7 +113,7 @@ export function ModoAulaAluno({
         >
           📷 Escanear QR do professor
         </button>
-        {joinError && <p className="mt-2 text-xs text-danger-600">{joinError}</p>}
+        {joinError && <p role="alert" className="mt-2 text-xs text-danger-600">{joinError}</p>}
         {scannerOpen && <QrScannerModal onScan={handleScan} onClose={() => setScannerOpen(false)} />}
       </section>
     );
@@ -133,7 +140,7 @@ export function ModoAulaAluno({
         {contentTrigger && <TriggerCard trigger={contentTrigger} />}
         <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
-          <p className="mt-1 text-xs text-success-600">Resposta enviada! Aguardando o professor.</p>
+          <p role="status" className="mt-1 text-xs text-success-600">Resposta enviada! Aguardando o professor.</p>
         </section>
       </div>
     );
@@ -147,6 +154,7 @@ export function ModoAulaAluno({
       <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
         <p className="mt-1 text-sm font-medium text-ink-700">{activity.content.question}</p>
+        {answerError && <p role="alert" className="mt-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{answerError}</p>}
         {options ? (
           <div className="mt-3 flex flex-col gap-2">
             {options.map((option, index) => (
@@ -164,6 +172,7 @@ export function ModoAulaAluno({
         ) : (
           <div className="mt-3 flex flex-col gap-2">
             <textarea
+              aria-label="Sua resposta"
               value={text}
               onChange={(e) => setText(e.target.value)}
               disabled={submitting}

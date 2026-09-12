@@ -128,3 +128,13 @@ describe('useLiveSession', () => {
     );
   });
 });
+
+
+it('distinguishes a connection failure from an unknown classroom code', async () => {
+  sessionsResult = { data: null, error: new Error('offline') };
+  const { result } = renderHook(() => useLiveSession('student-1'));
+  await act(async () => { await result.current.join('1234'); });
+  expect(result.current.joinError).toMatch(/conexão/i);
+  expect(result.current.joining).toBe(false);
+  expect(result.current.session).toBeNull();
+});

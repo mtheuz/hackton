@@ -95,3 +95,13 @@ describe('ModoAulaAluno', () => {
     expect(screen.getByText('Energia igual massa vezes velocidade da luz ao quadrado')).toBeInTheDocument();
   });
 });
+
+it('keeps incomplete classroom codes from being submitted', () => {
+  const onJoin = vi.fn();
+  render(<ModoAulaAluno session={null} activity={null} contentTrigger={null} answered={false} joining={false} joinError={null} onJoin={onJoin} onSubmitAnswer={vi.fn()} onLeave={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('Código da aula'), { target: { value: '12a' } });
+  expect(screen.getByLabelText('Código da aula')).toHaveValue('12');
+  expect(screen.getByText('Entrar na aula')).toBeDisabled();
+  fireEvent.click(screen.getByText('Entrar na aula'));
+  expect(onJoin).not.toHaveBeenCalled();
+});

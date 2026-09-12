@@ -25,3 +25,9 @@ export interface MoodCheckin {
   mood: MoodValue;
   createdAt: string;
 }
+
+export interface MoodPerformanceBucket {
+  mood: MoodValue;
+  accuracy: number;
+  sampleSize: number;
+}

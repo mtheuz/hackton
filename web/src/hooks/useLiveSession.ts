@@ -126,21 +126,31 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
   }, [session, refetchActivity, refetchContentTrigger, refetchSessionStatus]);
 
   const join = useCallback(async (code: string) => {
+    if (!/^\d{4}$/.test(code)) {
+      setJoinError('Digite os 4 dígitos do código da aula.');
+      return;
+    }
     setJoining(true);
     setJoinError(null);
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('sessions')
         .select('id, code, status')
         .eq('code', code)
         .eq('status', 'active')
         .maybeSingle<SessionRow>();
 
+      if (error) throw error;
       if (!data) {
         setJoinError('Código não encontrado. Confira com o professor.');
         return;
       }
+      setActivity(null);
+      setContentTrigger(null);
+      setAnswered(false);
       setSession({ id: data.id, code: data.code, status: data.status });
+    } catch {
+      setJoinError('Não foi possível entrar na aula. Confira sua conexão e tente novamente.');
     } finally {
       setJoining(false);
     }

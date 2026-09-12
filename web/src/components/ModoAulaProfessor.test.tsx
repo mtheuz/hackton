@@ -184,3 +184,17 @@ describe('ModoAulaProfessor', () => {
     );
   });
 });
+
+it('blocks empty or duplicate options so the quiz answer index stays valid', () => {
+  const onLaunchActivity = vi.fn();
+  render(<ModoAulaProfessor classes={[]} session={{ id: 's1', code: '1234', status: 'active' }} sessionConfig={NO_CONFIG} activity={null} tally={{ kind: 'options', counts: [] }} onStartSession={vi.fn()} onEndSession={vi.fn()} onLaunchActivity={onLaunchActivity} onSendContentTrigger={vi.fn()} />);
+  fireEvent.change(screen.getByLabelText('Pergunta'), { target: { value: 'Quanto é 2+2?' } });
+  fireEvent.change(screen.getByPlaceholderText('Opção 2'), { target: { value: '4' } });
+  fireEvent.click(screen.getByLabelText('Opção 2 é a correta'));
+  expect(screen.getByText('Lançar atividade')).toBeDisabled();
+  fireEvent.change(screen.getByPlaceholderText('Opção 1'), { target: { value: ' 4 ' } });
+  expect(screen.getByText('Lançar atividade')).toBeDisabled();
+  fireEvent.change(screen.getByPlaceholderText('Opção 1'), { target: { value: '3' } });
+  fireEvent.click(screen.getByText('Lançar atividade'));
+  expect(onLaunchActivity).toHaveBeenCalledWith('quiz', { question: 'Quanto é 2+2?', options: ['3', '4'], correct_index: 1 });
+});

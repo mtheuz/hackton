@@ -36,7 +36,10 @@ const fromMock = vi.fn((table: string) => {
 });
 
 vi.mock('../services/supabaseClient', () => ({
-  supabase: { from: (table: string) => fromMock(table) },
+  supabase: {
+    from: (table: string) => fromMock(table),
+    rpc: vi.fn().mockResolvedValue({ data: [], error: null }),
+  },
 }));
 
 describe('TurmaOverview', () => {

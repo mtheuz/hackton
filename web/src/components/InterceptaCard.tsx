@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { PendingMission } from '../types/intercepta';
 
 interface InterceptaCardProps {
@@ -18,30 +18,41 @@ export function InterceptaCard({
   onAnswer,
   onSimulateImpulse,
 }: InterceptaCardProps) {
+  const [error, setError] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   const [frozenMission, setFrozenMission] = useState<PendingMission | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const displayedMission = showFeedback ? frozenMission : incomingMission;
+  const displayedMission = showFeedback || submitting ? frozenMission ?? incomingMission : incomingMission;
 
   async function handleAnswer(index: number) {
     setFrozenMission(incomingMission);
     setSelectedIndex(index);
-    setShowFeedback(true);
+    setError(null);
     setSubmitting(true);
     try {
       await onAnswer(index);
+      setShowFeedback(true);
+      timer.current = setTimeout(() => setShowFeedback(false), FEEDBACK_DISPLAY_MS);
+    } catch {
+      setError('Não foi possível salvar sua resposta. Tente novamente.');
+      setSelectedIndex(null);
     } finally {
       setSubmitting(false);
-      window.setTimeout(() => setShowFeedback(false), FEEDBACK_DISPLAY_MS);
     }
   }
 
   async function handleSimulate() {
+    setError(null);
+    setFrozenMission(null);
     setSubmitting(true);
     try {
       await onSimulateImpulse();
+    } catch {
+      setError('Não foi possível buscar um desafio. Tente novamente.');
     } finally {
       setSubmitting(false);
     }
@@ -50,6 +61,7 @@ export function InterceptaCard({
   if (!displayedMission) {
     return (
       <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+        {error && <p role="alert" className="mb-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{error}</p>}
         <p className="text-sm font-medium text-ink-700">
           Trocas de impulso por estudo: {completedCount}
         </p>
@@ -73,6 +85,8 @@ export function InterceptaCard({
 
   return (
     <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm" aria-live="polite">
+      {error && <p role="alert" className="mb-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{error}</p>}
+      {submitting && <p role="status" className="mb-3 text-sm text-ink-500">Salvando sua resposta…</p>}
       <p className="text-xs font-semibold uppercase tracking-wide text-brand-600">{mission.content.subject}</p>
       <p className="mt-1 text-sm font-medium text-ink-700">{mission.content.question}</p>
       <div className="mt-3 flex flex-col gap-2">

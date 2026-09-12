@@ -1,5 +1,7 @@
 import BarChartIcon from '~icons/twemoji/bar-chart';
 import { useClassOverview } from '../hooks/useClassOverview';
+import { useClassMoodPerformance } from '../hooks/useClassMoodPerformance';
+import { ClassMoodInsight } from './ClassMoodInsight';
 import type { Discipline } from '../types/disciplina';
 import type { TeacherClass } from '../types/modoAula';
 
@@ -11,6 +13,7 @@ interface TurmaOverviewProps {
 
 export function TurmaOverview({ classInfo, disciplines, onAssignDiscipline }: TurmaOverviewProps) {
   const { overview, loading } = useClassOverview(classInfo.id);
+  const { buckets: moodBuckets, loading: moodLoading } = useClassMoodPerformance(classInfo.id);
 
   return (
     <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
@@ -57,6 +60,8 @@ export function TurmaOverview({ classInfo, disciplines, onAssignDiscipline }: Tu
               </dd>
             </div>
           </dl>
+
+          <ClassMoodInsight buckets={moodBuckets} loading={moodLoading} />
         </>
       )}
     </section>

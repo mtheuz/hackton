@@ -1,14 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { destinationAfterLogin } from '../lib/authNavigation';
 import { useAuthStore } from '../store/useAuthStore';
-import type { UserRole } from '../types/user';
-
-const ROLE_HOME: Record<UserRole, string> = {
-  student: '/aluno',
-  teacher: '/professor',
-  school_admin: '/escola',
-};
-
 const FRIENDLY_ERRORS: { match: RegExp; message: string }[] = [
   { match: /invalid login credentials/i, message: 'Email ou senha incorretos. Confira e tente de novo.' },
   { match: /email not confirmed/i, message: 'Esse email ainda não foi confirmado. Confira sua caixa de entrada.' },
@@ -22,6 +15,9 @@ function friendlyErrorMessage(err: unknown): string {
 }
 
 export function LoginPage() {
+  const user = useAuthStore((s) => s.user);
+  const location = useLocation();
+  const from: unknown = location.state?.from;
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -34,14 +30,16 @@ export function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const user = await signIn(email, password);
-      navigate(ROLE_HOME[user.role], { replace: true });
+      const user = await signIn(email.trim(), password);
+      navigate(destinationAfterLogin(user.role, from), { replace: true });
     } catch (err) {
       setError(friendlyErrorMessage(err));
     } finally {
       setLoading(false);
     }
   }
+
+  if (user) return <Navigate to={destinationAfterLogin(user.role, from)} replace />;
 
   return (
     <div className="flex min-h-svh flex-col items-center justify-center bg-canvas p-4 sm:p-6">
@@ -67,6 +65,9 @@ export function LoginPage() {
             </label>
             <input
               id="email"
+              autoComplete="username"
+              autoCapitalize="none"
+              disabled={loading}
               type="email"
               required
               placeholder="seu.email@escola.com"
@@ -85,6 +86,8 @@ export function LoginPage() {
             <input
               id="password"
               type="password"
+              autoComplete="current-password"
+              disabled={loading}
               required
               placeholder="••••••••"
               value={password}
@@ -94,7 +97,7 @@ export function LoginPage() {
           </div>
 
           {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-danger-50 bg-danger-50 p-3 text-xs font-medium text-danger-600">
+            <div role="alert" className="flex items-center gap-2 rounded-lg border border-danger-50 bg-danger-50 p-3 text-xs font-medium text-danger-600">
               <svg className="h-4 w-4 shrink-0 fill-current" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
               </svg>

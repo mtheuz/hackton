@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { MoodCheckin, MoodValue } from '../types/intercepta';
 import DisappointedFaceIcon from '~icons/twemoji/disappointed-face';
 import ConfusedFaceIcon from '~icons/twemoji/confused-face';
@@ -16,16 +16,30 @@ const MOODS: { value: MoodValue; Icon: typeof DisappointedFaceIcon; label: strin
 
 interface CheckinHumorProps {
   recentMoods: MoodCheckin[];
-  onCheckin: (mood: MoodValue) => void;
+  onCheckin: (mood: MoodValue) => void | Promise<void>;
 }
 
 export function CheckinHumor({ recentMoods, onCheckin }: CheckinHumorProps) {
   const [justPicked, setJustPicked] = useState<MoodValue | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
 
-  function handlePick(mood: MoodValue) {
+  async function handlePick(mood: MoodValue) {
+    if (saving || justPicked) return;
+    setSaving(true);
+    setError(null);
     setJustPicked(mood);
-    onCheckin(mood);
-    window.setTimeout(() => setJustPicked((current) => (current === mood ? null : current)), 1200);
+    try {
+      await onCheckin(mood);
+      timer.current = setTimeout(() => setJustPicked(null), 1200);
+    } catch {
+      setJustPicked(null);
+      setError('Não foi possível salvar seu check-in. Tente novamente ou toque em Agora não.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -38,7 +52,8 @@ export function CheckinHumor({ recentMoods, onCheckin }: CheckinHumorProps) {
             type="button"
             aria-label={mood.label}
             aria-pressed={justPicked === mood.value}
-            onClick={() => handlePick(mood.value)}
+            disabled={saving || justPicked !== null}
+            onClick={() => void handlePick(mood.value)}
             className={[
               'flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-all active:scale-95',
               justPicked === mood.value ? 'bg-brand-100 ring-2 ring-brand-500' : 'hover:bg-canvas',
@@ -48,6 +63,7 @@ export function CheckinHumor({ recentMoods, onCheckin }: CheckinHumorProps) {
           </button>
         ))}
       </div>
+      {error && <p role="alert" className="mt-2 text-xs text-danger-600">{error}</p>}
       {recentMoods.length > 0 && (
         <div className="mt-4 flex items-center gap-2">
           <span className="text-xs text-ink-500">Últimos check-ins:</span>

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useDialogFocus } from '../hooks/useDialogFocus';
 import { useTutorChat } from '../hooks/useTutorChat';
 
 interface ChatTutorProps {
@@ -9,8 +10,15 @@ interface ChatTutorProps {
 export function ChatTutor({ activityId, onClose }: ChatTutorProps) {
   const { turns, sending, ask } = useTutorChat(activityId);
   const [question, setQuestion] = useState('');
+  const dialogRef = useDialogFocus(onClose);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const messages = messagesRef.current;
+    if (messages) messages.scrollTop = messages.scrollHeight;
+  }, [turns, sending]);
 
   async function handleSend() {
+    if (sending || !question.trim()) return;
     const value = question;
     setQuestion('');
     await ask(value);
@@ -19,6 +27,8 @@ export function ChatTutor({ activityId, onClose }: ChatTutorProps) {
   return (
     <div
       role="dialog"
+      aria-modal="true"
+      ref={dialogRef}
       aria-label="Tutor Restrito"
       className="fixed inset-0 z-20 flex items-end justify-center bg-black/40 sm:items-center"
       onClick={onClose}
@@ -35,7 +45,7 @@ export function ChatTutor({ activityId, onClose }: ChatTutorProps) {
         </div>
         <p className="mt-1 text-xs text-ink-500">Não dou a resposta pronta — te ajudo a pensar.</p>
 
-        <div className="mt-3 flex-1 space-y-2 overflow-y-auto">
+        <div ref={messagesRef} role="log" aria-live="polite" aria-label="Conversa com o tutor" className="mt-3 flex-1 space-y-2 overflow-y-auto">
           {turns.length === 0 && <p className="text-xs text-ink-500">Pergunta alguma coisa sobre essa atividade.</p>}
           {turns.map((turn) => (
             <div
@@ -52,7 +62,7 @@ export function ChatTutor({ activityId, onClose }: ChatTutorProps) {
           {sending && <p className="text-xs text-ink-500">Tutor está pensando...</p>}
         </div>
 
-        <div className="mt-3 flex gap-2">
+        <form onSubmit={(event) => { event.preventDefault(); void handleSend(); }} className="mt-3 flex gap-2">
           <input
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
@@ -61,14 +71,13 @@ export function ChatTutor({ activityId, onClose }: ChatTutorProps) {
             className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
           />
           <button
-            type="button"
+            type="submit"
             disabled={sending || question.trim().length === 0}
-            onClick={() => void handleSend()}
             className="min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
             Enviar
           </button>
-        </div>
+        </form>
       </div>
     </div>
   );

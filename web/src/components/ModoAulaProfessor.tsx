@@ -56,6 +56,8 @@ export function ModoAulaProfessor({
   onLaunchActivity,
   onSendContentTrigger,
 }: ModoAulaProfessorProps) {
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
   const [type, setType] = useState<ActivityType>('quiz');
   const [question, setQuestion] = useState('');
   const [options, setOptions] = useState(['', '']);
@@ -76,6 +78,7 @@ export function ModoAulaProfessor({
       <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
         <p className="mt-1 text-xs text-ink-500">Escolha a turma e inicie a aula.</p>
+        {error && <p role="alert" className="mt-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{error}</p>}
 
         <div className="mt-4 rounded-xl border border-line-200 p-4">
           <h3 className="flex items-center gap-1.5 text-xs font-semibold text-ink-700">
@@ -104,8 +107,11 @@ export function ModoAulaProfessor({
               disabled={startingClassId !== null}
               onClick={async () => {
                 setStartingClassId(c.id);
+                setError(null);
                 try {
                   await onStartSession(c.id, config);
+                } catch {
+                  setError('Não foi possível iniciar a aula. Confira sua conexão e tente novamente.');
                 } finally {
                   setStartingClassId(null);
                 }
@@ -121,20 +127,24 @@ export function ModoAulaProfessor({
   }
 
   async function handleLaunch() {
+    if (!question.trim() || ((type === 'quiz' || type === 'poll') && (options.some((option) => !option.trim()) || new Set(options.map((option) => option.trim().toLowerCase())).size !== options.length))) return;
+    setError(null);
     setLaunching(true);
     try {
       const trimmedOptions = options.map((o) => o.trim()).filter(Boolean);
       if (type === 'quiz') {
-        await onLaunchActivity('quiz', { question, options: trimmedOptions, correct_index: correctIndex });
+        await onLaunchActivity('quiz', { question: question.trim(), options: trimmedOptions, correct_index: correctIndex });
       } else if (type === 'poll') {
-        await onLaunchActivity('poll', { question, options: trimmedOptions });
+        await onLaunchActivity('poll', { question: question.trim(), options: trimmedOptions });
       } else {
-        await onLaunchActivity('open_question', { question });
+        await onLaunchActivity('open_question', { question: question.trim() });
       }
       setQuestion('');
       setOptions(['', '']);
       setCorrectIndex(0);
       setShowLauncher(false);
+    } catch {
+      setError('A atividade não foi enviada. Seus campos foram mantidos para tentar novamente.');
     } finally {
       setLaunching(false);
     }
@@ -144,15 +154,20 @@ export function ModoAulaProfessor({
     if (!window.confirm('Encerrar a aula agora? Os alunos serão desconectados e não vão conseguir responder mais nada.')) {
       return;
     }
+    setError(null);
     setEnding(true);
     try {
       await onEndSession();
+    } catch {
+      setError('Não foi possível encerrar a aula. Tente novamente.');
     } finally {
       setEnding(false);
     }
   }
 
   async function handleSendTrigger() {
+    setError(null);
+    setNotice('');
     setSendingTrigger(true);
     try {
       const caption = sessionConfig?.accessibilityMode ? triggerCaption.trim() || undefined : undefined;
@@ -160,15 +175,21 @@ export function ModoAulaProfessor({
       setTriggerContent('');
       setTriggerCaption('');
       setTriggerFormOpen(false);
+      setNotice('Conteúdo enviado para a turma.');
+    } catch {
+      setError('O conteúdo não foi enviado. Tente novamente.');
     } finally {
       setSendingTrigger(false);
     }
   }
 
   const needsOptions = type === 'quiz' || type === 'poll';
+  const invalidOptions = needsOptions && (options.some((option) => !option.trim()) || new Set(options.map((option) => option.trim().toLowerCase())).size !== options.length);
 
   return (
     <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+      {error && <p role="alert" className="mb-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{error}</p>}
+      {notice && <p role="status" className="mb-3 rounded-lg bg-success-50 p-3 text-sm text-success-600">{notice}</p>}
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
         <button
@@ -277,6 +298,7 @@ export function ModoAulaProfessor({
                       next[index] = e.target.value;
                       setOptions(next);
                     }}
+                    aria-label={`Opção ${index + 1}`}
                     placeholder={`Opção ${index + 1}`}
                     className="min-h-11 flex-1 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
                   />
@@ -294,7 +316,7 @@ export function ModoAulaProfessor({
 
           <button
             type="button"
-            disabled={launching || !question.trim()}
+            disabled={launching || !question.trim() || invalidOptions}
             onClick={() => void handleLaunch()}
             className="mt-2 min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
           >
@@ -306,6 +328,7 @@ export function ModoAulaProfessor({
       <div className="mt-4 rounded-xl border border-line-200 p-4">
         <button
           type="button"
+          aria-expanded={triggerFormOpen}
           onClick={() => setTriggerFormOpen((open) => !open)}
           className="flex w-full items-center justify-between text-xs font-semibold text-ink-700"
         >

@@ -62,6 +62,8 @@ export function useTutorChat(activityId: string | null): UseTutorChatResult {
         }
 
         setTurns((prev) => [...prev, { id: makeId(), role: 'tutor', content: data?.reply ?? '' }]);
+      } catch {
+        setTurns((prev) => [...prev, { id: makeId(), role: 'tutor', content: 'A conexão falhou. Envie sua pergunta novamente quando estiver conectado.' }]);
       } finally {
         setSending(false);
       }

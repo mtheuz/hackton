@@ -4,11 +4,13 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useInterceptaMission } from '../hooks/useInterceptaMission';
 import { useDomainProgress } from '../hooks/useDomainProgress';
 import { useMoodCheckins } from '../hooks/useMoodCheckins';
+import { useMoodPerformance } from '../hooks/useMoodPerformance';
 import { useLiveSession } from '../hooks/useLiveSession';
 import { InterceptaCard } from '../components/InterceptaCard';
 import { MoodCheckInOverlay } from '../components/MoodCheckInOverlay';
 import { LogoutButton } from '../components/LogoutButton';
 import { ModoAulaAluno } from '../components/ModoAulaAluno';
+import { MoodPerformanceInsight } from '../components/MoodPerformanceInsight';
 import { ChatTutor } from '../components/ChatTutor';
 import { AlunoTabBar, type AlunoTab } from '../components/AlunoTabBar';
 import EmptyProgressIcon from '~icons/streamline-ultimate-color/picture-sun';
@@ -26,6 +28,7 @@ export function AlunoHome() {
     simulateImpulse,
   } = useInterceptaMission(studentId);
   const { progress } = useDomainProgress(studentId);
+  const { buckets: moodPerformance } = useMoodPerformance(studentId);
   const { recentMoods, loading: moodLoading, checkin } = useMoodCheckins(studentId);
   const {
     session: liveSession,
@@ -46,7 +49,7 @@ export function AlunoHome() {
   const [moodPromptDismissed, setMoodPromptDismissed] = useState(false);
   const [tutorOpen, setTutorOpen] = useState(false);
   const sessionActive = liveSession?.status === 'active';
-  const tutorActivityId = liveActivity?.id ?? mission?.activityId ?? null;
+  const tutorActivityId = tab === 'aula' && sessionActive ? liveActivity?.id ?? null : tab === 'intercepta' ? mission?.activityId ?? null : null;
 
   useEffect(() => {
     if (sessionActive) setTab('aula');
@@ -106,6 +109,7 @@ export function AlunoHome() {
 
         {tab === 'aula' && (
           <ModoAulaAluno
+            key={`${liveSession?.id ?? "join"}:${liveActivity?.id ?? "waiting"}`}
             session={liveSession}
             activity={liveActivity}
             contentTrigger={liveContentTrigger}
@@ -130,26 +134,30 @@ export function AlunoHome() {
         )}
 
         {tab === 'progresso' && (
-          <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-ink-700">Seu progresso</h2>
-            {progress.length === 0 ? (
-              <div className="mt-2 flex flex-col items-center gap-2 py-4 text-center">
-                <EmptyProgressIcon aria-hidden className="h-16 w-16" />
-                <p className="text-sm text-ink-500">Ainda sem progresso registrado.</p>
-              </div>
-            ) : (
-              <ul className="mt-3 space-y-2">
-                {progress.map((p) => (
-                  <li key={p.subject} className="flex items-center justify-between text-sm">
-                    <span className="capitalize text-ink-700">{p.subject}</span>
-                    <span className="font-medium text-ink-700">
-                      Nível {p.level} · {p.pfAccumulated} PF
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+          <>
+            <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+              <h2 className="text-sm font-semibold text-ink-700">Seu progresso</h2>
+              {progress.length === 0 ? (
+                <div className="mt-2 flex flex-col items-center gap-2 py-4 text-center">
+                  <EmptyProgressIcon aria-hidden className="h-16 w-16" />
+                  <p className="text-sm text-ink-500">Ainda sem progresso registrado.</p>
+                </div>
+              ) : (
+                <ul className="mt-3 space-y-2">
+                  {progress.map((p) => (
+                    <li key={p.subject} className="flex items-center justify-between text-sm">
+                      <span className="capitalize text-ink-700">{p.subject}</span>
+                      <span className="font-medium text-ink-700">
+                        Nível {p.level} · {p.pfAccumulated} PF
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <MoodPerformanceInsight buckets={moodPerformance} />
+          </>
         )}
       </main>
 
@@ -163,10 +171,10 @@ export function AlunoHome() {
         </button>
       )}
       {tutorOpen && tutorActivityId && (
-        <ChatTutor activityId={tutorActivityId} onClose={() => setTutorOpen(false)} />
+        <ChatTutor key={tutorActivityId} activityId={tutorActivityId} onClose={() => setTutorOpen(false)} />
       )}
 
-      <AlunoTabBar active={tab} onChange={setTab} aulaBadge={sessionActive && !liveAnswered} />
+      <AlunoTabBar active={tab} onChange={(next) => { setTutorOpen(false); setTab(next); }} aulaBadge={sessionActive && !liveAnswered} />
     </div>
   );
 }

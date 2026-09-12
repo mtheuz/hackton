@@ -35,3 +35,16 @@ describe('InterceptaCard', () => {
     expect(onSimulateImpulse).toHaveBeenCalled();
   });
 });
+
+it('does not announce points before saving and allows retry after failure', async () => {
+  let rejectSave: (reason: Error) => void = () => {};
+  const onAnswer = vi.fn(() => new Promise<void>((_resolve, reject) => { rejectSave = reject; }));
+  render(<InterceptaCard mission={mission} completedCount={0} onAnswer={onAnswer} onSimulateImpulse={vi.fn()} />);
+  fireEvent.click(screen.getByText('56'));
+  expect(screen.queryByText(/Valeu por trocar/)).not.toBeInTheDocument();
+  expect(screen.getByText('56')).toBeDisabled();
+  rejectSave(new Error('offline'));
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível salvar'));
+  expect(screen.getByText('56')).not.toBeDisabled();
+  expect(screen.queryByText(/Valeu por trocar/)).not.toBeInTheDocument();
+});

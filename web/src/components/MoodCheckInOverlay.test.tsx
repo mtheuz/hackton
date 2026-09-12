@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MoodCheckInOverlay } from './MoodCheckInOverlay';
 
 describe('MoodCheckInOverlay', () => {
@@ -26,4 +26,16 @@ describe('MoodCheckInOverlay', () => {
 
     expect(screen.getByRole('dialog', { name: 'Check-in de humor' })).toBeInTheDocument();
   });
+});
+
+
+it('keeps the check-in open and allows retry when saving fails', async () => {
+  const onSkip = vi.fn();
+  const onCheckin = vi.fn().mockRejectedValue(new Error('offline'));
+  render(<MoodCheckInOverlay recentMoods={[]} onCheckin={onCheckin} onSkip={onSkip} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Bem' }));
+  await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('Não foi possível salvar'));
+  expect(onSkip).not.toHaveBeenCalled();
+  expect(screen.getByRole('button', { name: 'Bem' })).not.toBeDisabled();
+  expect(screen.getByRole('dialog')).toBeInTheDocument();
 });
