@@ -133,6 +133,45 @@ describe('ModoAulaProfessor', () => {
     expect(screen.getByText('3 (75%)')).toBeInTheDocument();
   });
 
+  it('flashes a notice when a new answer comes in for the current activity', () => {
+    const activity = {
+      id: 'activity-1',
+      type: 'quiz' as const,
+      content: { question: 'Quanto é 2+2?', options: ['3', '4'], correct_index: 1 },
+    };
+    const { rerender } = render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={activity}
+        tally={{ kind: 'options', counts: [0, 0] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('Nova resposta!')).not.toBeInTheDocument();
+
+    rerender(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={activity}
+        tally={{ kind: 'options', counts: [0, 1] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Nova resposta!')).toBeInTheDocument();
+  });
+
   it('keeps the content trigger form collapsed by default', () => {
     render(
       <ModoAulaProfessor

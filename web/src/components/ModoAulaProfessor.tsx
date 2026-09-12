@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import GearIcon from '~icons/twemoji/gear';
 import MegaphoneIcon from '~icons/twemoji/megaphone';
+import { ToggleSwitch } from './ToggleSwitch';
 import type {
   ActivityContent,
   ActivityType,
@@ -116,14 +117,12 @@ export function ModoAulaProfessor({
           </h3>
           <div className="mt-2 flex flex-col gap-2">
             {CONFIG_TOGGLES.map((toggle) => (
-              <label key={toggle.key} className="flex items-center gap-2 text-sm text-ink-700">
-                <input
-                  type="checkbox"
-                  checked={config[toggle.key]}
-                  onChange={(e) => setConfig({ ...config, [toggle.key]: e.target.checked })}
-                />
-                {toggle.label}
-              </label>
+              <ToggleSwitch
+                key={toggle.key}
+                label={toggle.label}
+                checked={Boolean(config[toggle.key])}
+                onChange={(checked) => setConfig({ ...config, [toggle.key]: checked })}
+              />
             ))}
           </div>
         </div>

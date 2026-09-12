@@ -20,12 +20,14 @@ export function useClassTranscription(enabled: boolean) {
   const [transcript, setTranscript] = useState('');
   const [unsupported, setUnsupported] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null);
   const recorder = useRef<MediaRecorder | null>(null);
+  const chunks = useRef<Blob[]>([]);
   const stream = useRef<MediaStream | null>(null);
   const speech = useRef<SpeechRecognitionLike | null>(null);
 
   const stop = useCallback(() => {
-    recorder.current?.stop();
+    if (recorder.current?.state === 'recording') recorder.current.stop();
     speech.current?.stop();
     stream.current?.getTracks().forEach((track) => track.stop());
     recorder.current = null; stream.current = null; speech.current = null;
@@ -42,7 +44,11 @@ export function useClassTranscription(enabled: boolean) {
     try {
       const media = await navigator.mediaDevices.getUserMedia({ audio: true });
       stream.current = media;
-      const mediaRecorder = new MediaRecorder(media); mediaRecorder.start(); recorder.current = mediaRecorder;
+      const mediaRecorder = new MediaRecorder(media);
+      chunks.current = [];
+      mediaRecorder.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data); };
+      mediaRecorder.onstop = () => { if (chunks.current.length) { const url = URL.createObjectURL(new Blob(chunks.current, { type: mediaRecorder.mimeType || 'audio/webm' })); setRecordingUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return url; }); } };
+      mediaRecorder.start(); recorder.current = mediaRecorder;
       const recognition = new Recognition(); recognition.lang = 'pt-BR'; recognition.continuous = true; recognition.interimResults = true;
       recognition.onresult = (event) => {
         const text = Array.from({ length: event.resultIndex + 1 }, (_, index) => event.results[index]?.[0]?.transcript ?? '').join(' ');
@@ -53,6 +59,6 @@ export function useClassTranscription(enabled: boolean) {
     } catch { setError('Não foi possível acessar o microfone. Verifique a permissão do navegador.'); }
   }, [enabled, recording]);
 
-  useEffect(() => () => stop(), [stop]);
-  return { recording, transcript, unsupported, error, start, stop, clear: () => setTranscript('') };
+  useEffect(() => () => { stop(); setRecordingUrl((previous) => { if (previous) URL.revokeObjectURL(previous); return null; }); }, [stop]);
+  return { recording, transcript, recordingUrl, unsupported, error, start, stop, clear: () => setTranscript('') };
 }
