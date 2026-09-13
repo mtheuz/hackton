@@ -12,10 +12,10 @@ import { MoodCheckInOverlay } from '../components/MoodCheckInOverlay';
 import { LogoutButton } from '../components/LogoutButton';
 import { ModoAulaAluno } from '../components/ModoAulaAluno';
 import { MoodPerformanceInsight } from '../components/MoodPerformanceInsight';
+import { SimpleBarChart } from '../components/SimpleBarChart';
 import { StreakBadge } from '../components/StreakBadge';
 import { ChatTutor } from '../components/ChatTutor';
 import { AlunoTabBar, type AlunoTab } from '../components/AlunoTabBar';
-import EmptyProgressIcon from '~icons/streamline-ultimate-color/picture-sun';
 import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
 import GraduationCapIcon from '~icons/twemoji/graduation-cap';
 

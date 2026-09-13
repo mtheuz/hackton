@@ -310,3 +310,63 @@ it('blocks empty or duplicate options so the quiz answer index stays valid', () 
   fireEvent.click(screen.getByText('Lançar atividade'));
   expect(onLaunchActivity).toHaveBeenCalledWith('quiz', { question: 'Quanto é 2+2?', options: ['3', '4'], correct_index: 1 });
 });
+
+describe('ModoAulaProfessor with pending lesson slides', () => {
+  const pendingSlides = [
+    {
+      id: 'slide-2',
+      position: 1,
+      type: 'open_question' as const,
+      content: { question: 'O que você aprendeu?' },
+      textContent: null,
+      filePath: null,
+      fileUrl: null,
+      fileName: null,
+      fileType: null,
+      accessibilityCaption: null,
+    },
+  ];
+
+  it('shows a button to advance to the next lesson slide', () => {
+    const onLaunchSlide = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        pendingSlides={pendingSlides}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onLaunchSlide={onLaunchSlide}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Próximo slide da aula (1 restante)')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('Avançar'));
+    expect(onLaunchSlide).toHaveBeenCalledWith(pendingSlides[0]);
+  });
+
+  it('hides the advance button when there are no pending slides', () => {
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        pendingSlides={[]}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onLaunchSlide={vi.fn()}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByText('Avançar')).not.toBeInTheDocument();
+  });
+});

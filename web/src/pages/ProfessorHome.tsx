@@ -4,11 +4,16 @@ import { LogoutButton } from '../components/LogoutButton';
 import { useTeacherSession } from '../hooks/useTeacherSession';
 import { useSessionLiveStats } from '../hooks/useSessionLiveStats';
 import { useDisciplines } from '../hooks/useDisciplines';
+import { useLessons } from '../hooks/useLessons';
+import { fetchLessonSlides } from '../hooks/useLessonSlides';
 import { ModoAulaProfessor } from '../components/ModoAulaProfessor';
 import { DisciplinaManager } from '../components/DisciplinaManager';
 import { TurmaOverview } from '../components/TurmaOverview';
+import { LessonList } from '../components/LessonList';
+import { ProfessorDashboard } from '../components/ProfessorDashboard';
 import { ProfessorTabBar, type ProfessorTab } from '../components/ProfessorTabBar';
 import type { LiveActivity, PollContent, QuizContent } from '../types/modoAula';
+import type { Lesson, LessonSlide } from '../types/lesson';
 
 function optionCountFor(activity: LiveActivity | null): number | null {
   if (!activity) return null;
@@ -28,81 +33,121 @@ export function ProfessorHome() {
     sessionConfig,
     activity,
     startSession,
+    startSessionFromLesson,
     endSession,
     launchActivity,
+    launchSlide,
     sendContentTrigger,
     assignDiscipline,
   } = useTeacherSession(teacherId);
   const tally = useSessionLiveStats(session?.id ?? null, activity?.id ?? null, optionCountFor(activity));
   const { disciplines, createDiscipline, renameDiscipline } = useDisciplines(teacherId);
+  const { lessons, loading: lessonsLoading, createLesson, updateLesson, deleteLesson } = useLessons(teacherId);
 
-  const [tab, setTab] = useState<ProfessorTab>('aula');
+  const [tab, setTab] = useState<ProfessorTab>('dashboard');
+  const [pendingSlides, setPendingSlides] = useState<LessonSlide[]>([]);
 
   if (!user) return null;
+
+  async function handleStartLesson(lesson: Lesson) {
+    const slides = await fetchLessonSlides(lesson.id);
+    await startSessionFromLesson(lesson, slides[0]);
+    setPendingSlides(slides.slice(1));
+  }
+
+  async function handleLaunchSlide(slide: LessonSlide) {
+    await launchSlide(slide);
+    setPendingSlides((prev) => prev.filter((s) => s.id !== slide.id));
+  }
+
+  async function handleEndSession() {
+    await endSession();
+    setPendingSlides([]);
+  }
 
   return (
     <div className="min-h-svh bg-canvas pb-safe">
       <header className="sticky top-0 z-10 border-b border-line-200 bg-canvas/95 pt-safe backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3.5 sm:px-6">
-          <div>
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3.5 sm:px-8">
+          <button type="button" onClick={() => setTab('dashboard')} className="text-left">
             <p className="text-xs text-ink-500">Olá,</p>
             <h1 className="text-base font-semibold text-ink-700">{user.name}</h1>
-          </div>
+          </button>
           <LogoutButton />
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-4 p-4 pb-24 sm:p-6">
-        <section className="relative mt-6 rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
-          <div className="pr-24 sm:pr-28">
-            <span className="inline-block rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-600">
-              Painel do Professor
-            </span>
-            <h2 className="mt-1 text-base font-bold text-ink-700">
-              Olá, Prof. {user.name.split(' ')[0]}! 📋
-            </h2>
-            <p className="mt-1 text-xs leading-relaxed text-ink-500">
-              Gerencie suas turmas, inicie sessões ativas e acompanhe o engajamento em tempo real.
-            </p>
-          </div>
-          <img
-            src="/professor-mascot.png"
-            alt="Mascote Professora Fokido"
-            className="absolute -top-9 -right-1 h-36 w-auto object-contain drop-shadow-2xl transition-transform duration-300 hover:scale-110 pointer-events-none select-none"
-          />
-        </section>
-
-        {tab === 'aula' && (
+      {session ? (
+        <main className="mx-auto max-w-2xl space-y-4 p-4 pb-24 sm:p-6">
           <ModoAulaProfessor
             classes={classes}
             session={session}
             sessionConfig={sessionConfig}
             activity={activity}
             tally={tally}
+            pendingSlides={pendingSlides}
             onStartSession={startSession}
-            onEndSession={endSession}
+            onEndSession={handleEndSession}
             onLaunchActivity={launchActivity}
+            onLaunchSlide={handleLaunchSlide}
             onSendContentTrigger={sendContentTrigger}
           />
-        )}
-
-        {tab === 'turmas' && (
-          <>
-            <DisciplinaManager disciplines={disciplines} onCreate={createDiscipline} onRename={renameDiscipline} />
-
-            {classes.map((c) => (
-              <TurmaOverview
-                key={c.id}
-                classInfo={c}
+        </main>
+      ) : (
+        <>
+          <main className="mx-auto max-w-5xl space-y-4 p-4 pb-24 sm:p-8">
+            {tab === 'dashboard' && (
+              <ProfessorDashboard
+                teacherName={user.name}
+                classes={classes}
+                lessons={lessons}
                 disciplines={disciplines}
-                onAssignDiscipline={assignDiscipline}
               />
-            ))}
-          </>
-        )}
-      </main>
+            )}
 
-      <ProfessorTabBar active={tab} onChange={setTab} />
+            {tab === 'disciplinas' && (
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <DisciplinaManager disciplines={disciplines} onCreate={createDiscipline} onRename={renameDiscipline} />
+                {classes.map((c) => (
+                  <TurmaOverview
+                    key={c.id}
+                    classInfo={c}
+                    disciplines={disciplines}
+                    onAssignDiscipline={assignDiscipline}
+                  />
+                ))}
+              </div>
+            )}
+
+            {tab === 'aulas' && (
+              <div className="space-y-4">
+                <LessonList
+                  classes={classes}
+                  lessons={lessons}
+                  loading={lessonsLoading}
+                  onCreateLesson={createLesson}
+                  onUpdateLesson={updateLesson}
+                  onDeleteLesson={deleteLesson}
+                  onStartLesson={handleStartLesson}
+                />
+                <ModoAulaProfessor
+                  classes={classes}
+                  session={null}
+                  sessionConfig={sessionConfig}
+                  activity={activity}
+                  tally={tally}
+                  onStartSession={startSession}
+                  onEndSession={handleEndSession}
+                  onLaunchActivity={launchActivity}
+                  onSendContentTrigger={sendContentTrigger}
+                />
+              </div>
+            )}
+          </main>
+
+          <ProfessorTabBar active={tab} onChange={setTab} />
+        </>
+      )}
     </div>
   );
 }

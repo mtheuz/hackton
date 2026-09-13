@@ -8,6 +8,7 @@ import type {
   SessionConfig,
   TeacherClass,
 } from '../types/modoAula';
+import type { Lesson, LessonSlide } from '../types/lesson';
 
 const CONTENT_TRIGGER_BUCKET = 'content-triggers';
 
@@ -58,10 +59,31 @@ interface UseTeacherSessionResult {
   activity: LiveActivity | null;
   loading: boolean;
   startSession: (classId: string, config: SessionConfig, topic: string) => Promise<void>;
+  startSessionFromLesson: (lesson: Lesson, firstSlide?: LessonSlide) => Promise<void>;
   endSession: () => Promise<void>;
   launchActivity: (type: ActivityType, content: ActivityContent) => Promise<void>;
+  launchSlide: (slide: LessonSlide) => Promise<void>;
   sendContentTrigger: (textContent: string, file: File | null, accessibilityCaption?: string) => Promise<void>;
   assignDiscipline: (classId: string, disciplineId: string) => Promise<void>;
+}
+
+async function insertContentTrigger(params: {
+  sessionId: string;
+  textContent: string | null;
+  filePath: string | null;
+  fileName: string | null;
+  fileType: string | null;
+  accessibilityCaption: string | null;
+}) {
+  const { error } = await supabase.from('content_triggers').insert({
+    session_id: params.sessionId,
+    text_content: params.textContent,
+    file_path: params.filePath,
+    file_name: params.fileName,
+    file_type: params.fileType,
+    accessibility_caption: params.accessibilityCaption,
+  });
+  if (error) throw error;
 }
 
 export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
@@ -229,17 +251,91 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
         fileType = file.type || null;
       }
 
-      const { error } = await supabase.from('content_triggers').insert({
-        session_id: session.id,
-        text_content: textContent || null,
-        file_path: filePath,
-        file_name: fileName,
-        file_type: fileType,
-        accessibility_caption: accessibilityCaption ?? null,
+      await insertContentTrigger({
+        sessionId: session.id,
+        textContent: textContent || null,
+        filePath,
+        fileName,
+        fileType,
+        accessibilityCaption: accessibilityCaption ?? null,
       });
-      if (error) throw error;
     },
     [session],
+  );
+
+  const launchSlideForSession = useCallback(
+    async (sessionId: string, slide: LessonSlide) => {
+      if (slide.type === 'material') {
+        await insertContentTrigger({
+          sessionId,
+          textContent: slide.textContent,
+          filePath: slide.filePath,
+          fileName: slide.fileName,
+          fileType: slide.fileType,
+          accessibilityCaption: slide.accessibilityCaption,
+        });
+        return;
+      }
+      if (!slide.content) return;
+      const { error } = await supabase.from('activities').insert({
+        session_id: sessionId,
+        type: slide.type,
+        content_json: slide.content,
+      });
+      if (error) throw error;
+      await refetchActivity(sessionId);
+    },
+    [refetchActivity],
+  );
+
+  const startSessionFromLesson = useCallback(
+    async (lesson: Lesson, firstSlide?: LessonSlide) => {
+      let code = randomCode();
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        const { data: taken } = await supabase
+          .from('sessions')
+          .select('id')
+          .eq('code', code)
+          .eq('status', 'active')
+          .maybeSingle();
+        if (!taken) break;
+        code = randomCode();
+      }
+
+      const { data: inserted, error } = await supabase
+        .from('sessions')
+        .insert({
+          class_id: lesson.classId,
+          teacher_id: teacherId,
+          code,
+          status: 'active',
+          topic: lesson.subject,
+          allow_notes: lesson.config.allowNotes,
+          allow_free_chatbot: lesson.config.allowFreeChatbot,
+          focus_mode: lesson.config.focusMode,
+          quiz_at_end: false,
+          accessibility_mode: lesson.config.accessibilityMode,
+          allow_transcription: false,
+        })
+        .select('id')
+        .single();
+      if (error) throw error;
+
+      const sessionId = (inserted as { id: string }).id;
+      if (firstSlide) {
+        await launchSlideForSession(sessionId, firstSlide);
+      }
+      await refetchSession();
+    },
+    [teacherId, refetchSession, launchSlideForSession],
+  );
+
+  const launchSlide = useCallback(
+    async (slide: LessonSlide) => {
+      if (!session) return;
+      await launchSlideForSession(session.id, slide);
+    },
+    [session, launchSlideForSession],
   );
 
   const assignDiscipline = useCallback(
@@ -258,8 +354,10 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
     activity,
     loading,
     startSession,
+    startSessionFromLesson,
     endSession,
     launchActivity,
+    launchSlide,
     sendContentTrigger,
     assignDiscipline,
   };

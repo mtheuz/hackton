@@ -11,6 +11,7 @@ function chainable(result: { data: unknown; error: unknown }) {
     insert: vi.fn(() => builder),
     update: vi.fn(() => builder),
     maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+    single: vi.fn().mockResolvedValue({ data: { id: 'session-new' }, error: null }),
     then: (resolve: (v: typeof result) => void) => resolve(result),
   };
   return builder;
@@ -183,6 +184,78 @@ describe('useTeacherSession', () => {
         file_type: 'application/pdf',
       }),
     );
+  });
+
+  it('starts a session from a lesson and launches its first slide as an activity', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    const lesson = {
+      id: 'lesson-1',
+      classId: 'class-1',
+      name: 'Frações',
+      subject: 'Frações básicas',
+      config: { allowNotes: true, allowFreeChatbot: false, focusMode: false, accessibilityMode: false },
+    };
+    const firstSlide = {
+      id: 'slide-1',
+      position: 0,
+      type: 'quiz' as const,
+      content: { question: 'Q?', options: ['A', 'B'], correct_index: 0 },
+      textContent: null,
+      filePath: null,
+      fileUrl: null,
+      fileName: null,
+      fileType: null,
+      accessibilityCaption: null,
+    };
+
+    await act(async () => {
+      await result.current.startSessionFromLesson(lesson, firstSlide);
+    });
+
+    expect(sessionsBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        class_id: 'class-1',
+        teacher_id: 'teacher-1',
+        topic: 'Frações básicas',
+        allow_notes: true,
+      }),
+    );
+    expect(activitiesBuilder.insert).toHaveBeenCalledWith({
+      session_id: 'session-new',
+      type: 'quiz',
+      content_json: { question: 'Q?', options: ['A', 'B'], correct_index: 0 },
+    });
+  });
+
+  it('launches a material slide as a content trigger for the current session', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() => expect(result.current.session?.id).toBe('session-1'));
+
+    await act(async () => {
+      await result.current.launchSlide({
+        id: 'slide-2',
+        position: 1,
+        type: 'material',
+        content: null,
+        textContent: 'Leia o capítulo 3',
+        filePath: null,
+        fileUrl: null,
+        fileName: null,
+        fileType: null,
+        accessibilityCaption: null,
+      });
+    });
+
+    expect(contentTriggersBuilder.insert).toHaveBeenCalledWith({
+      session_id: 'session-1',
+      text_content: 'Leia o capítulo 3',
+      file_path: null,
+      file_name: null,
+      file_type: null,
+      accessibility_caption: null,
+    });
   });
 
   it('loads classes with their assigned discipline', async () => {
