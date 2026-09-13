@@ -1,3 +1,4 @@
+import { SimpleBarChart } from './SimpleBarChart';
 import type { MoodPerformanceBucket, MoodValue } from '../types/intercepta';
 import DisappointedFaceIcon from '~icons/streamline-emojis/disappointed-face';
 import ConfusedFaceIcon from '~icons/streamline-emojis/confused-face';
@@ -21,31 +22,26 @@ interface ClassMoodInsightProps {
 export function ClassMoodInsight({ buckets, loading }: ClassMoodInsightProps) {
   if (loading) return null;
 
+  const bars = buckets.map(({ mood, accuracy, sampleSize }) => {
+    const { Icon, label } = MOOD_DISPLAY[mood];
+    return {
+      key: mood,
+      label,
+      tableLabel: `${label} (${sampleSize} alunos)`,
+      value: accuracy,
+      displayValue: `${accuracy}%`,
+      icon: <Icon aria-hidden className="h-4 w-4" />,
+    };
+  });
+
   return (
     <div className="mt-4 border-t border-line-200 pt-4">
-      <h3 className="text-xs font-semibold text-ink-700">Humor × acerto em quiz (anônimo)</h3>
-      {buckets.length === 0 ? (
-        <p className="mt-1 text-[11px] text-ink-500">
-          Ainda sem dados suficientes (mínimo de 3 alunos por faixa de humor, pra proteger a identidade de quem respondeu).
-        </p>
-      ) : (
-        <ul className="mt-2 space-y-1.5">
-          {buckets.map(({ mood, accuracy, sampleSize }) => {
-            const { Icon, label } = MOOD_DISPLAY[mood];
-            return (
-              <li key={mood} className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1.5 text-ink-700">
-                  <Icon aria-hidden className="h-4 w-4" />
-                  {label}
-                </span>
-                <span className="text-ink-500">
-                  <span className="font-semibold text-ink-700">{accuracy}%</span> de acerto · {sampleSize} alunos
-                </span>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+      <SimpleBarChart
+        bare
+        title="Humor × acerto em quiz (anônimo)"
+        bars={bars}
+        emptyMessage="Ainda sem dados suficientes (mínimo de 3 alunos por faixa de humor, pra proteger a identidade de quem respondeu)."
+      />
     </div>
   );
 }

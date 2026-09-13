@@ -13,11 +13,11 @@ describe('ClassMoodInsight', () => {
     expect(screen.getByText(/Ainda sem dados suficientes/)).toBeInTheDocument();
   });
 
-  it('lists each mood bucket with its accuracy and student count', () => {
+  it('shows each mood bucket as a bar with its accuracy, and the student count in the table twin', () => {
     render(<ClassMoodInsight buckets={[{ mood: 'bem', accuracy: 75, sampleSize: 5 }]} loading={false} />);
 
-    expect(screen.getByText('Bem')).toBeInTheDocument();
-    expect(screen.getByText('75%')).toBeInTheDocument();
-    expect(screen.getByText(/5 alunos/)).toBeInTheDocument();
+    expect(screen.getAllByText('75%').length).toBeGreaterThan(0);
+    const table = screen.getByRole('table');
+    expect(table).toHaveTextContent('Bem (5 alunos)');
   });
 });
