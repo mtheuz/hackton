@@ -12,7 +12,7 @@ const NO_CONFIG: SessionConfig = {
 };
 
 function openTriggerForm() {
-  fireEvent.click(screen.getByText('Enviar gatilho de conteúdo'));
+  fireEvent.click(screen.getByText('Enviar material de conteúdo'));
 }
 
 describe('ModoAulaProfessor', () => {
@@ -187,9 +187,9 @@ describe('ModoAulaProfessor', () => {
       />,
     );
 
-    expect(screen.queryByLabelText('Conteúdo')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Texto')).not.toBeInTheDocument();
     openTriggerForm();
-    expect(screen.getByLabelText('Conteúdo')).toBeInTheDocument();
+    expect(screen.getByLabelText('Texto')).toBeInTheDocument();
   });
 
   it('sends a content trigger without a caption when accessibility mode is off', () => {
@@ -211,10 +211,10 @@ describe('ModoAulaProfessor', () => {
     openTriggerForm();
     expect(screen.queryByLabelText('Legenda de acessibilidade')).not.toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText('Conteúdo'), { target: { value: 'E = mc²' } });
-    fireEvent.click(screen.getByText('Enviar gatilho'));
+    fireEvent.change(screen.getByLabelText('Texto'), { target: { value: 'E = mc²' } });
+    fireEvent.click(screen.getByText('Enviar material'));
 
-    expect(onSendContentTrigger).toHaveBeenCalledWith('formula', 'E = mc²', undefined);
+    expect(onSendContentTrigger).toHaveBeenCalledWith('E = mc²', null, undefined);
   });
 
   it('sends a content trigger with a caption when accessibility mode is on', () => {
@@ -234,17 +234,66 @@ describe('ModoAulaProfessor', () => {
     );
 
     openTriggerForm();
-    fireEvent.change(screen.getByLabelText('Conteúdo'), { target: { value: 'E = mc²' } });
+    fireEvent.change(screen.getByLabelText('Texto'), { target: { value: 'E = mc²' } });
     fireEvent.change(screen.getByLabelText('Legenda de acessibilidade'), {
       target: { value: 'Energia igual massa vezes velocidade da luz ao quadrado' },
     });
-    fireEvent.click(screen.getByText('Enviar gatilho'));
+    fireEvent.click(screen.getByText('Enviar material'));
 
     expect(onSendContentTrigger).toHaveBeenCalledWith(
-      'formula',
       'E = mc²',
+      null,
       'Energia igual massa vezes velocidade da luz ao quadrado',
     );
+  });
+
+  it('rejects a file with an unsupported format before it reaches state', () => {
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    openTriggerForm();
+    const file = new File(['x'], 'malware.exe', { type: 'application/x-msdownload' });
+    fireEvent.change(screen.getByLabelText('Arquivo (JPG, PDF, DOC ou DOCX)'), { target: { files: [file] } });
+
+    expect(screen.getByText(/Formato não aceito/)).toBeInTheDocument();
+    expect(screen.queryByText('Selecionado: malware.exe')).not.toBeInTheDocument();
+  });
+
+  it('sends a content trigger with only a file attached, no text required', () => {
+    const onSendContentTrigger = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={onSendContentTrigger}
+      />,
+    );
+
+    openTriggerForm();
+    const file = new File(['conteudo'], 'apostila.pdf', { type: 'application/pdf' });
+    fireEvent.change(screen.getByLabelText('Arquivo (JPG, PDF, DOC ou DOCX)'), { target: { files: [file] } });
+    expect(screen.getByText('Selecionado: apostila.pdf')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Enviar material'));
+
+    expect(onSendContentTrigger).toHaveBeenCalledWith('', file, undefined);
   });
 });
 

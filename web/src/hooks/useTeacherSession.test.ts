@@ -64,12 +64,17 @@ const fromMock = vi.fn((table: string) => {
 });
 
 const channelMock = { on: vi.fn().mockReturnThis(), subscribe: vi.fn().mockReturnThis() };
+const storageUploadMock = vi.fn().mockResolvedValue({ data: { path: 'session-1/file.pdf' }, error: null });
+const storageMock = { from: vi.fn(() => ({ upload: storageUploadMock })) };
 
 vi.mock('../services/supabaseClient', () => ({
   supabase: {
     from: (table: string) => fromMock(table),
     channel: vi.fn(() => channelMock),
     removeChannel: vi.fn(),
+    get storage() {
+      return storageMock;
+    },
   },
 }));
 
@@ -132,24 +137,52 @@ describe('useTeacherSession', () => {
     await waitFor(() => expect(result.current.sessionConfig).toEqual({ ...NO_CONFIG, accessibilityMode: true }));
   });
 
-  it('sends a content trigger for the current session', async () => {
+  it('sends a text-only content trigger for the current session', async () => {
     const { result } = renderHook(() => useTeacherSession('teacher-1'));
     await waitFor(() => expect(result.current.session?.id).toBe('session-1'));
 
     await act(async () => {
       await result.current.sendContentTrigger(
-        'formula',
         'E = mc²',
+        null,
         'Energia igual massa vezes velocidade da luz ao quadrado',
       );
     });
 
+    expect(storageUploadMock).not.toHaveBeenCalled();
     expect(contentTriggersBuilder.insert).toHaveBeenCalledWith({
       session_id: 'session-1',
-      type: 'formula',
-      content: 'E = mc²',
+      text_content: 'E = mc²',
+      file_path: null,
+      file_name: null,
+      file_type: null,
       accessibility_caption: 'Energia igual massa vezes velocidade da luz ao quadrado',
     });
+  });
+
+  it('uploads and links a file when sending a content trigger', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() => expect(result.current.session?.id).toBe('session-1'));
+
+    const file = new File(['conteudo'], 'apostila.pdf', { type: 'application/pdf' });
+
+    await act(async () => {
+      await result.current.sendContentTrigger('', file);
+    });
+
+    expect(storageUploadMock).toHaveBeenCalledWith(
+      expect.stringMatching(/^session-1\/.+\.pdf$/),
+      file,
+      { contentType: 'application/pdf' },
+    );
+    expect(contentTriggersBuilder.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        session_id: 'session-1',
+        text_content: null,
+        file_name: 'apostila.pdf',
+        file_type: 'application/pdf',
+      }),
+    );
   });
 
   it('loads classes with their assigned discipline', async () => {

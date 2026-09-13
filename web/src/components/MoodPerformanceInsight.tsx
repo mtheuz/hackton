@@ -1,3 +1,4 @@
+import { SimpleBarChart } from './SimpleBarChart';
 import type { MoodPerformanceBucket, MoodValue } from '../types/intercepta';
 import DisappointedFaceIcon from '~icons/twemoji/disappointed-face';
 import ConfusedFaceIcon from '~icons/twemoji/confused-face';
@@ -24,31 +25,28 @@ export function MoodPerformanceInsight({ buckets }: MoodPerformanceInsightProps)
   const worst = buckets.reduce((a, b) => (b.accuracy < a.accuracy ? b : a));
   const gap = best.accuracy - worst.accuracy;
 
+  const bars = buckets.map(({ mood, accuracy, sampleSize }) => {
+    const { Icon, label } = MOOD_DISPLAY[mood];
+    return {
+      key: mood,
+      label,
+      tableLabel: `${label} (${sampleSize} respostas)`,
+      value: accuracy,
+      displayValue: `${accuracy}%`,
+      icon: <Icon aria-hidden className="h-4 w-4" />,
+    };
+  });
+
   return (
-    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
-      <h2 className="text-sm font-semibold text-ink-700">Seu Raio-X: humor × acerto</h2>
-      <ul className="mt-3 space-y-2">
-        {buckets.map(({ mood, accuracy, sampleSize }) => {
-          const { Icon, label } = MOOD_DISPLAY[mood];
-          return (
-            <li key={mood} className="flex items-center justify-between text-sm">
-              <span className="flex items-center gap-2 text-ink-700">
-                <Icon aria-hidden className="h-5 w-5" />
-                {label}
-              </span>
-              <span className="text-xs text-ink-500">
-                <span className="font-semibold text-ink-700">{accuracy}%</span> de acerto · {sampleSize} respostas
-              </span>
-            </li>
-          );
-        })}
-      </ul>
+    <div className="space-y-3">
+      <SimpleBarChart title="Seu Raio-X: humor × acerto" bars={bars} emptyMessage="" />
       {gap >= 15 && (
-        <p className="mt-3 text-xs leading-relaxed text-ink-500">
-          Você acerta {gap} pontos a mais quando está <strong>{MOOD_DISPLAY[best.mood].label.toLowerCase()}</strong> do que quando
-          está <strong>{MOOD_DISPLAY[worst.mood].label.toLowerCase()}</strong>. Vale um check-in de humor antes de estudar.
+        <p className="text-xs leading-relaxed text-ink-500">
+          Você acerta {gap} pontos a mais quando está{' '}
+          <strong>{MOOD_DISPLAY[best.mood].label.toLowerCase()}</strong> do que quando está{' '}
+          <strong>{MOOD_DISPLAY[worst.mood].label.toLowerCase()}</strong>. Vale um check-in de humor antes de estudar.
         </p>
       )}
-    </section>
+    </div>
   );
 }

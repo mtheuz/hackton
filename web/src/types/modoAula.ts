@@ -59,11 +59,11 @@ export interface SessionConfig {
   allowTranscription?: boolean;
 }
 
-export type ContentTriggerType = 'formula' | 'note';
-
 export interface ContentTrigger {
   id: string;
-  type: ContentTriggerType;
-  content: string;
+  textContent: string | null;
+  fileUrl: string | null;
+  fileName: string | null;
+  fileType: string | null;
   accessibilityCaption: string | null;
 }

@@ -6,6 +6,8 @@ export interface BarDatum {
   value: number;
   displayValue: string;
   icon?: ReactNode;
+  /** Fuller text for the accessible table row when `label` is trimmed for the visual caption. */
+  tableLabel?: string;
 }
 
 interface SimpleBarChartProps {
@@ -69,7 +71,7 @@ export function SimpleBarChart({ title, bars, emptyMessage }: SimpleBarChartProp
         <tbody>
           {bars.map((bar) => (
             <tr key={bar.key}>
-              <td>{bar.label}</td>
+              <td>{bar.tableLabel ?? bar.label}</td>
               <td>{bar.displayValue}</td>
             </tr>
           ))}

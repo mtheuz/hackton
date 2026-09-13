@@ -78,8 +78,10 @@ describe('ModoAulaAluno', () => {
         activity={null}
         contentTrigger={{
           id: 'trigger-1',
-          type: 'formula',
-          content: 'E = mc²',
+          textContent: 'E = mc²',
+          fileUrl: null,
+          fileName: null,
+          fileType: null,
           accessibilityCaption: 'Energia igual massa vezes velocidade da luz ao quadrado',
         }}
         answered={false}
@@ -93,6 +95,32 @@ describe('ModoAulaAluno', () => {
 
     expect(screen.getByText('E = mc²')).toBeInTheDocument();
     expect(screen.getByText('Energia igual massa vezes velocidade da luz ao quadrado')).toBeInTheDocument();
+  });
+
+  it('shows a link to the attached file when the content trigger has one', () => {
+    render(
+      <ModoAulaAluno
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        activity={null}
+        contentTrigger={{
+          id: 'trigger-2',
+          textContent: null,
+          fileUrl: 'https://example.com/signed/apostila.pdf',
+          fileName: 'apostila.pdf',
+          fileType: 'application/pdf',
+          accessibilityCaption: null,
+        }}
+        answered={false}
+        joining={false}
+        joinError={null}
+        onJoin={vi.fn()}
+        onSubmitAnswer={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
+
+    const link = screen.getByRole('link', { name: /apostila\.pdf/ });
+    expect(link).toHaveAttribute('href', 'https://example.com/signed/apostila.pdf');
   });
 });
 

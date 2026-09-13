@@ -3,12 +3,13 @@ import { supabase } from '../services/supabaseClient';
 import type {
   ActivityContent,
   ActivityType,
-  ContentTriggerType,
   LiveActivity,
   LiveSession,
   SessionConfig,
   TeacherClass,
 } from '../types/modoAula';
+
+const CONTENT_TRIGGER_BUCKET = 'content-triggers';
 
 interface SessionRow {
   id: string;
@@ -59,7 +60,7 @@ interface UseTeacherSessionResult {
   startSession: (classId: string, config: SessionConfig, topic: string) => Promise<void>;
   endSession: () => Promise<void>;
   launchActivity: (type: ActivityType, content: ActivityContent) => Promise<void>;
-  sendContentTrigger: (type: ContentTriggerType, content: string, accessibilityCaption?: string) => Promise<void>;
+  sendContentTrigger: (textContent: string, file: File | null, accessibilityCaption?: string) => Promise<void>;
   assignDiscipline: (classId: string, disciplineId: string) => Promise<void>;
 }
 
@@ -210,12 +211,30 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
   );
 
   const sendContentTrigger = useCallback(
-    async (type: ContentTriggerType, content: string, accessibilityCaption?: string) => {
+    async (textContent: string, file: File | null, accessibilityCaption?: string) => {
       if (!session) return;
+
+      let filePath: string | null = null;
+      let fileName: string | null = null;
+      let fileType: string | null = null;
+
+      if (file) {
+        const ext = file.name.includes('.') ? file.name.split('.').pop() : null;
+        filePath = `${session.id}/${crypto.randomUUID()}${ext ? `.${ext}` : ''}`;
+        const { error: uploadError } = await supabase.storage
+          .from(CONTENT_TRIGGER_BUCKET)
+          .upload(filePath, file, { contentType: file.type || undefined });
+        if (uploadError) throw uploadError;
+        fileName = file.name;
+        fileType = file.type || null;
+      }
+
       const { error } = await supabase.from('content_triggers').insert({
         session_id: session.id,
-        type,
-        content,
+        text_content: textContent || null,
+        file_path: filePath,
+        file_name: fileName,
+        file_type: fileType,
         accessibility_caption: accessibilityCaption ?? null,
       });
       if (error) throw error;

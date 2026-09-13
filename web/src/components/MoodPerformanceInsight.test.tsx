@@ -8,7 +8,7 @@ describe('MoodPerformanceInsight', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('lists each mood bucket with its accuracy and sample size', () => {
+  it('shows each mood bucket as a bar with its accuracy, and the sample size in the table twin', () => {
     render(
       <MoodPerformanceInsight
         buckets={[
@@ -18,11 +18,12 @@ describe('MoodPerformanceInsight', () => {
       />,
     );
 
-    expect(screen.getByText('Mal')).toBeInTheDocument();
-    expect(screen.getByText('50%')).toBeInTheDocument();
-    expect(screen.getByText(/2 respostas/)).toBeInTheDocument();
-    expect(screen.getByText('Muito bem')).toBeInTheDocument();
-    expect(screen.getByText('90%')).toBeInTheDocument();
+    expect(screen.getAllByText('50%').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('90%').length).toBeGreaterThan(0);
+
+    const table = screen.getByRole('table');
+    expect(table).toHaveTextContent('Mal (2 respostas)');
+    expect(table).toHaveTextContent('Muito bem (4 respostas)');
   });
 
   it('highlights the mood gap when it is 15 points or more', () => {

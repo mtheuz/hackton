@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ChangeEvent } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import GearIcon from '~icons/twemoji/gear';
 import MegaphoneIcon from '~icons/twemoji/megaphone';
@@ -7,7 +8,6 @@ import type {
   ActivityContent,
   ActivityType,
   AnswerTally,
-  ContentTriggerType,
   LiveActivity,
   LiveSession,
   SessionConfig,
@@ -23,7 +23,24 @@ interface ModoAulaProfessorProps {
   onStartSession: (classId: string, config: SessionConfig, topic: string) => Promise<void>;
   onEndSession: () => Promise<void>;
   onLaunchActivity: (type: ActivityType, content: ActivityContent) => Promise<void>;
-  onSendContentTrigger: (type: ContentTriggerType, content: string, accessibilityCaption?: string) => Promise<void>;
+  onSendContentTrigger: (textContent: string, file: File | null, accessibilityCaption?: string) => Promise<void>;
+}
+
+const ALLOWED_FILE_EXTENSIONS = ['jpg', 'jpeg', 'pdf', 'doc', 'docx'];
+const ALLOWED_FILE_MIME_TYPES = [
+  'image/jpeg',
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+];
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+function validateContentFile(file: File): string | null {
+  const ext = file.name.includes('.') ? file.name.split('.').pop()!.toLowerCase() : '';
+  const typeOk = ALLOWED_FILE_MIME_TYPES.includes(file.type) || ALLOWED_FILE_EXTENSIONS.includes(ext);
+  if (!typeOk) return 'Formato não aceito. Envie um arquivo JPG, PDF, DOC ou DOCX.';
+  if (file.size > MAX_FILE_SIZE_BYTES) return 'Arquivo muito grande (máximo 10MB).';
+  return null;
 }
 
 function optionsFromContent(content: ActivityContent): string[] | null {
@@ -71,8 +88,9 @@ export function ModoAulaProfessor({
   const [config, setConfig] = useState<SessionConfig>(DEFAULT_CONFIG);
   const [topic, setTopic] = useState('');
   const [triggerFormOpen, setTriggerFormOpen] = useState(false);
-  const [triggerType, setTriggerType] = useState<ContentTriggerType>('formula');
   const [triggerContent, setTriggerContent] = useState('');
+  const [triggerFile, setTriggerFile] = useState<File | null>(null);
+  const [triggerFileError, setTriggerFileError] = useState<string | null>(null);
   const [triggerCaption, setTriggerCaption] = useState('');
   const [sendingTrigger, setSendingTrigger] = useState(false);
   const [newAnswerNotice, setNewAnswerNotice] = useState(false);
@@ -199,16 +217,36 @@ export function ModoAulaProfessor({
     setSendingTrigger(true);
     try {
       const caption = sessionConfig?.accessibilityMode ? triggerCaption.trim() || undefined : undefined;
-      await onSendContentTrigger(triggerType, triggerContent.trim(), caption);
+      await onSendContentTrigger(triggerContent.trim(), triggerFile, caption);
       setTriggerContent('');
+      setTriggerFile(null);
+      setTriggerFileError(null);
       setTriggerCaption('');
       setTriggerFormOpen(false);
-      setNotice('Conteúdo enviado para a turma.');
+      setNotice('Material enviado para a turma.');
     } catch {
-      setError('O conteúdo não foi enviado. Tente novamente.');
+      setError('O material não foi enviado. Tente novamente.');
     } finally {
       setSendingTrigger(false);
     }
+  }
+
+  function handleTriggerFileChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0] ?? null;
+    if (!file) {
+      setTriggerFile(null);
+      setTriggerFileError(null);
+      return;
+    }
+    const err = validateContentFile(file);
+    if (err) {
+      setTriggerFileError(err);
+      setTriggerFile(null);
+      e.target.value = '';
+      return;
+    }
+    setTriggerFileError(null);
+    setTriggerFile(file);
   }
 
   const needsOptions = type === 'quiz' || type === 'poll';
@@ -373,7 +411,7 @@ export function ModoAulaProfessor({
         >
           <span className="flex items-center gap-1.5">
             <MegaphoneIcon aria-hidden className="h-4 w-4" />
-            Enviar gatilho de conteúdo
+            Enviar material de conteúdo
           </span>
           <span aria-hidden className="text-ink-500">
             {triggerFormOpen ? '−' : '+'}
@@ -381,25 +419,30 @@ export function ModoAulaProfessor({
         </button>
         {triggerFormOpen && (
           <div className="mt-3 flex flex-col gap-2">
-            <label htmlFor="trigger-type" className="text-xs font-semibold text-ink-700">
-              Tipo
+            <label htmlFor="trigger-file" className="text-xs font-semibold text-ink-700">
+              Arquivo (JPG, PDF, DOC ou DOCX)
             </label>
-            <select
-              id="trigger-type"
-              value={triggerType}
-              onChange={(e) => setTriggerType(e.target.value as ContentTriggerType)}
-              className="min-h-11 rounded-lg border border-line-200 bg-canvas px-3 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
-            >
-              <option value="formula">Fórmula</option>
-              <option value="note">Anotação</option>
-            </select>
+            <input
+              id="trigger-file"
+              type="file"
+              accept=".jpg,.jpeg,.pdf,.doc,.docx,image/jpeg,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              onChange={handleTriggerFileChange}
+              className="text-sm text-ink-700 file:mr-3 file:min-h-11 file:rounded-full file:border-0 file:bg-brand-50 file:px-4 file:text-sm file:font-semibold file:text-brand-600"
+            />
+            {triggerFile && <p className="text-xs text-ink-500">Selecionado: {triggerFile.name}</p>}
+            {triggerFileError && (
+              <p role="alert" className="text-xs text-danger-600">
+                {triggerFileError}
+              </p>
+            )}
             <label htmlFor="trigger-content" className="text-xs font-semibold text-ink-700">
-              Conteúdo
+              Texto
             </label>
             <textarea
               id="trigger-content"
               value={triggerContent}
               onChange={(e) => setTriggerContent(e.target.value)}
+              placeholder="Mensagem opcional pra turma..."
               className="min-h-16 rounded-lg border border-line-200 bg-canvas px-3 py-2 text-sm text-ink-900 outline-none transition-all duration-200 focus:border-brand-600 focus:bg-surface focus:ring-2 focus:ring-brand-600/20"
             />
             {sessionConfig?.accessibilityMode && (
@@ -417,11 +460,11 @@ export function ModoAulaProfessor({
             )}
             <button
               type="button"
-              disabled={sendingTrigger || triggerContent.trim().length === 0}
+              disabled={sendingTrigger || (triggerContent.trim().length === 0 && !triggerFile)}
               onClick={() => void handleSendTrigger()}
               className="mt-1 min-h-11 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white disabled:opacity-50"
             >
-              {sendingTrigger ? 'Enviando...' : 'Enviar gatilho'}
+              {sendingTrigger ? 'Enviando...' : 'Enviar material'}
             </button>
           </div>
         )}

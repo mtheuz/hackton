@@ -4,10 +4,12 @@ import type {
   ActivityContent,
   ActivityType,
   ContentTrigger,
-  ContentTriggerType,
   LiveActivity,
   LiveSession,
 } from '../types/modoAula';
+
+const CONTENT_TRIGGER_BUCKET = 'content-triggers';
+const SIGNED_URL_TTL_SECONDS = 60 * 60;
 
 interface SessionRow {
   id: string;
@@ -30,8 +32,10 @@ interface ActivityRow {
 
 interface ContentTriggerRow {
   id: string;
-  type: ContentTriggerType;
-  content: string;
+  text_content: string | null;
+  file_path: string | null;
+  file_name: string | null;
+  file_type: string | null;
   accessibility_caption: string | null;
 }
 
@@ -77,23 +81,34 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
   const refetchContentTrigger = useCallback(async (sessionId: string) => {
     const { data } = await supabase
       .from('content_triggers')
-      .select('id, type, content, accessibility_caption')
+      .select('id, text_content, file_path, file_name, file_type, accessibility_caption')
       .eq('session_id', sessionId)
       .order('created_at', { ascending: false })
       .limit(1);
 
     const rows = (data ?? []) as ContentTriggerRow[];
     const latest = rows[0] ?? null;
-    setContentTrigger(
-      latest
-        ? {
-            id: latest.id,
-            type: latest.type,
-            content: latest.content,
-            accessibilityCaption: latest.accessibility_caption,
-          }
-        : null,
-    );
+    if (!latest) {
+      setContentTrigger(null);
+      return;
+    }
+
+    let fileUrl: string | null = null;
+    if (latest.file_path) {
+      const { data: signed } = await supabase.storage
+        .from(CONTENT_TRIGGER_BUCKET)
+        .createSignedUrl(latest.file_path, SIGNED_URL_TTL_SECONDS);
+      fileUrl = signed?.signedUrl ?? null;
+    }
+
+    setContentTrigger({
+      id: latest.id,
+      textContent: latest.text_content,
+      fileUrl,
+      fileName: latest.file_name,
+      fileType: latest.file_type,
+      accessibilityCaption: latest.accessibility_caption,
+    });
   }, []);
 
   const refetchSessionStatus = useCallback(async (sessionId: string) => {

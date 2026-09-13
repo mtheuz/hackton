@@ -4,6 +4,7 @@ import type { SessionConfig } from '../types/modoAula';
 import { useClassTranscription } from '../hooks/useClassTranscription';
 import { QrScannerModal } from './QrScannerModal';
 import CameraIcon from '~icons/twemoji/camera';
+import PaperclipIcon from '~icons/twemoji/paperclip';
 
 function codeFromScan(value: string): string {
   try {
@@ -34,10 +35,21 @@ function optionsFromContent(content: ActivityContent): string[] | null {
 function TriggerCard({ trigger }: { trigger: ContentTrigger }) {
   return (
     <section className="rounded-2xl border border-brand-500 bg-brand-50 p-5 shadow-sm">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-brand-600">
-        {trigger.type === 'formula' ? 'Fórmula' : 'Anotação'} do professor
-      </h2>
-      <p className="mt-1 whitespace-pre-wrap text-sm font-medium text-ink-700">{trigger.content}</p>
+      <h2 className="text-xs font-semibold uppercase tracking-wide text-brand-600">Material do professor</h2>
+      {trigger.textContent && (
+        <p className="mt-1 whitespace-pre-wrap text-sm font-medium text-ink-700">{trigger.textContent}</p>
+      )}
+      {trigger.fileUrl && (
+        <a
+          href={trigger.fileUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 flex min-h-11 items-center gap-2 rounded-lg border border-line-200 bg-surface px-3 text-sm font-semibold text-brand-600"
+        >
+          <PaperclipIcon aria-hidden className="h-4 w-4" />
+          {trigger.fileName ?? 'Abrir arquivo'}
+        </a>
+      )}
       {trigger.accessibilityCaption && (
         <p className="mt-2 text-xs italic text-ink-500">{trigger.accessibilityCaption}</p>
       )}

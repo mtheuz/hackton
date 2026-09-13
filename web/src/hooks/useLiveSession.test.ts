@@ -23,10 +23,26 @@ const activitiesBuilder = chainable(() => ({
   error: null,
 }));
 const studentEventsBuilder = chainable(() => ({ data: null, error: null }));
-const contentTriggersBuilder = chainable(() => ({
-  data: [{ id: 'trigger-1', type: 'formula', content: 'E=mc²', accessibility_caption: null }],
+let contentTriggerResult: { data: unknown; error: unknown } = {
+  data: [
+    {
+      id: 'trigger-1',
+      text_content: 'E=mc²',
+      file_path: null,
+      file_name: null,
+      file_type: null,
+      accessibility_caption: null,
+    },
+  ],
   error: null,
-}));
+};
+const contentTriggersBuilder = chainable(() => contentTriggerResult);
+
+const createSignedUrlMock = vi.fn().mockResolvedValue({
+  data: { signedUrl: 'https://example.com/signed/apostila.pdf' },
+  error: null,
+});
+const storageMock = { from: vi.fn(() => ({ createSignedUrl: createSignedUrlMock })) };
 
 const fromMock = vi.fn((table: string) => {
   switch (table) {
@@ -50,13 +66,30 @@ vi.mock('../services/supabaseClient', () => ({
     from: (table: string) => fromMock(table),
     channel: vi.fn(() => channelMock),
     removeChannel: vi.fn(),
+    get storage() {
+      return storageMock;
+    },
   },
 }));
 
 describe('useLiveSession', () => {
   beforeEach(() => {
     sessionsResult = { data: null, error: null };
+    contentTriggerResult = {
+      data: [
+        {
+          id: 'trigger-1',
+          text_content: 'E=mc²',
+          file_path: null,
+          file_name: null,
+          file_type: null,
+          accessibility_caption: null,
+        },
+      ],
+      error: null,
+    };
     (studentEventsBuilder.insert as ReturnType<typeof vi.fn>).mockClear();
+    createSignedUrlMock.mockClear();
   });
 
   it('reports an error when the code does not match an active session', async () => {
@@ -121,11 +154,39 @@ describe('useLiveSession', () => {
     await waitFor(() =>
       expect(result.current.contentTrigger).toEqual({
         id: 'trigger-1',
-        type: 'formula',
-        content: 'E=mc²',
+        textContent: 'E=mc²',
+        fileUrl: null,
+        fileName: null,
+        fileType: null,
         accessibilityCaption: null,
       }),
     );
+  });
+
+  it('resolves a signed URL for a content trigger attachment', async () => {
+    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }, error: null };
+    contentTriggerResult = {
+      data: [
+        {
+          id: 'trigger-2',
+          text_content: null,
+          file_path: 'session-1/apostila.pdf',
+          file_name: 'apostila.pdf',
+          file_type: 'application/pdf',
+          accessibility_caption: null,
+        },
+      ],
+      error: null,
+    };
+
+    const { result } = renderHook(() => useLiveSession('student-1'));
+
+    await act(async () => {
+      await result.current.join('1234');
+    });
+
+    await waitFor(() => expect(result.current.contentTrigger?.fileUrl).toBe('https://example.com/signed/apostila.pdf'));
+    expect(createSignedUrlMock).toHaveBeenCalledWith('session-1/apostila.pdf', 60 * 60);
   });
 });
 
