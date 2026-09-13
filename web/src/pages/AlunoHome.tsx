@@ -54,6 +54,7 @@ export function AlunoHome() {
   const [moodPromptDismissed, setMoodPromptDismissed] = useState(false);
   const [tutorOpen, setTutorOpen] = useState(false);
   const sessionActive = liveSession?.status === 'active';
+  const aulaMode = tab === 'aula' && sessionActive;
   const tutorActivityId = tab === 'aula' && sessionActive ? liveActivity?.id ?? null : tab === 'intercepta' ? mission?.activityId ?? null : null;
 
   useEffect(() => {
@@ -69,7 +70,7 @@ export function AlunoHome() {
   const firstName = user.name.split(' ')[0];
   const tabMascot: Record<AlunoTab, { src: string; alt: string; headline: string; sub: string }> = {
     aula: {
-      src: '/aluno-mascot.png',
+      src: sessionActive ? '/aluno-mascot-ninja.png' : '/aluno-mascot.png',
       alt: 'Mascote Fokido estudando com um livro',
       headline: `Modo aula ligado, ${firstName}! 📚`,
       sub: 'Acompanhe a aula e responda no seu ritmo.',
@@ -99,24 +100,23 @@ export function AlunoHome() {
         />
       )}
 
-      <header className="sticky top-0 z-10 border-b border-line-200 bg-canvas/95 pt-safe backdrop-blur">
+      <header className={[
+        'sticky top-0 z-10 border-b pt-safe backdrop-blur',
+        aulaMode ? 'grym-classroom-enter border-brand-800 bg-ink-900/95' : 'border-line-200 bg-canvas/95',
+      ].join(' ')}>
         <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3.5 sm:px-6">
           <div>
-            <p className="text-xs text-ink-500">Olá,</p>
-            <h1 className="text-base font-semibold text-ink-700">{user.name}</h1>
+            <p className={aulaMode ? 'text-xs text-white/60' : 'text-xs text-ink-500'}>{aulaMode ? 'Você está em' : 'Olá,'}</p>
+            <h1 className={aulaMode ? 'text-base font-semibold text-white' : 'text-base font-semibold text-ink-700'}>{aulaMode ? 'Modo Aula' : user.name}</h1>
+            {aulaMode && liveSession.topic && <p className="mt-0.5 max-w-[14rem] truncate text-xs text-white/70" title={liveSession.topic}>{liveSession.topic}</p>}
           </div>
           <div className="flex items-center gap-2">
-            <StreakBadge streak={streak} activeToday={activeToday} />
-            <div className="flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5">
-              <SynchronizeArrowIcon aria-hidden className="h-4 w-4" />
-              <span className="text-xs font-semibold text-brand-600">{completedCount}</span>
-            </div>
-            <LogoutButton />
+            {aulaMode ? <button type="button" onClick={leaveLiveSession} className="min-h-11 rounded-full border border-white/30 px-3 text-xs font-semibold text-white transition-colors hover:border-white/60">Sair da aula</button> : <><StreakBadge streak={streak} activeToday={activeToday} /><div className="flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5"><SynchronizeArrowIcon aria-hidden className="h-4 w-4" /><span className="text-xs font-semibold text-brand-600">{completedCount}</span></div><LogoutButton /></>}
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-4 p-4 pb-24 sm:p-6">
+      <main className={aulaMode ? 'grym-classroom-enter mx-auto max-w-md space-y-4 p-4 pb-24 sm:p-6' : 'mx-auto max-w-md space-y-4 p-4 pb-24 sm:p-6'}>
         <section className="relative mt-6 rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
           <div className="pr-24 sm:pr-28">
             <span className="inline-block rounded-full bg-brand-50 px-2.5 py-0.5 text-xs font-semibold text-brand-600">
@@ -198,7 +198,7 @@ export function AlunoHome() {
         <ChatTutor key={tutorActivityId} activityId={tutorActivityId} onClose={() => setTutorOpen(false)} />
       )}
 
-      <AlunoTabBar active={tab} onChange={(next) => { setTutorOpen(false); setTab(next); }} aulaBadge={sessionActive && !liveAnswered} />
+      <AlunoTabBar active={tab} onChange={(next) => { setTutorOpen(false); setTab(next); }} aulaBadge={sessionActive && !liveAnswered} aulaOnly={aulaMode} />
     </div>
   );
 }

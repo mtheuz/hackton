@@ -63,10 +63,12 @@ button {
 @keyframes fokido-live-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
 @keyframes fokido-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 @keyframes fokido-soft-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+@keyframes fokido-classroom-enter { from { opacity: .35; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
 .grym-reveal { animation: fokido-card-reveal 280ms ease-out both; }
 .grym-live-pulse { animation: fokido-live-pulse 1.5s ease-in-out infinite; }
 .grym-shimmer { background-image: linear-gradient(105deg, transparent 35%, rgb(255 255 255 / 45%) 50%, transparent 65%); background-size: 220% 100%; animation: fokido-shimmer 2.4s ease-in-out infinite; }
 .grym-soft-float { animation: fokido-soft-float 3.2s ease-in-out infinite; }
+.grym-classroom-enter { animation: fokido-classroom-enter 360ms cubic-bezier(.22, 1, .36, 1) both; }
 .grym-button-press { transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease; }
 .grym-button-press:hover:not(:disabled) { filter: brightness(1.04); box-shadow: 0 3px 10px rgb(14 90 150 / 14%); }
 .grym-button-press:active:not(:disabled) { transform: scale(.97); }

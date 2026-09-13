@@ -8,6 +8,7 @@ interface AlunoTabBarProps {
   active: AlunoTab;
   onChange: (tab: AlunoTab) => void;
   aulaBadge: boolean;
+  aulaOnly?: boolean;
 }
 
 const TABS: { id: AlunoTab; label: string; Icon: typeof GraduationCapIcon }[] = [
@@ -16,11 +17,11 @@ const TABS: { id: AlunoTab; label: string; Icon: typeof GraduationCapIcon }[] = 
   { id: 'progresso', label: 'Progresso', Icon: AnalyticsBarsIcon },
 ];
 
-export function AlunoTabBar({ active, onChange, aulaBadge }: AlunoTabBarProps) {
+export function AlunoTabBar({ active, onChange, aulaBadge, aulaOnly = false }: AlunoTabBarProps) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-10 border-t border-line-200 bg-canvas/95 pb-safe backdrop-blur">
       <div className="mx-auto flex max-w-md items-stretch justify-around px-2">
-        {TABS.map((tab) => {
+        {TABS.filter((tab) => !aulaOnly || tab.id === 'aula').map((tab) => {
           const isActive = tab.id === active;
           return (
             <button
