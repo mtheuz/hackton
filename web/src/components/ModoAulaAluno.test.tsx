@@ -122,6 +122,114 @@ describe('ModoAulaAluno', () => {
     const link = screen.getByRole('link', { name: /apostila\.pdf/ });
     expect(link).toHaveAttribute('href', 'https://example.com/signed/apostila.pdf');
   });
+
+  it('renders an inline pdf viewer for a pdf attachment, so it plays like a slide screen', () => {
+    render(
+      <ModoAulaAluno
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        activity={null}
+        contentTrigger={{
+          id: 'trigger-2',
+          textContent: null,
+          fileUrl: 'https://example.com/signed/apostila.pdf',
+          fileName: 'apostila.pdf',
+          fileType: 'application/pdf',
+          accessibilityCaption: null,
+        }}
+        answered={false}
+        joining={false}
+        joinError={null}
+        onJoin={vi.fn()}
+        onSubmitAnswer={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
+
+    const frame = screen.getByTitle('apostila.pdf');
+    expect(frame.tagName).toBe('IFRAME');
+    expect(frame).toHaveAttribute('src', 'https://example.com/signed/apostila.pdf');
+  });
+
+  it('renders an inline image preview for an image attachment', () => {
+    render(
+      <ModoAulaAluno
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        activity={null}
+        contentTrigger={{
+          id: 'trigger-3',
+          textContent: null,
+          fileUrl: 'https://example.com/signed/slide-1.png',
+          fileName: 'slide-1.png',
+          fileType: 'image/png',
+          accessibilityCaption: null,
+        }}
+        answered={false}
+        joining={false}
+        joinError={null}
+        onJoin={vi.fn()}
+        onSubmitAnswer={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
+
+    const img = screen.getByRole('img', { name: 'slide-1.png' });
+    expect(img).toHaveAttribute('src', 'https://example.com/signed/slide-1.png');
+  });
+
+  it('opens a fullscreen view of the slide when the expand button is clicked', () => {
+    render(
+      <ModoAulaAluno
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        activity={null}
+        contentTrigger={{
+          id: 'trigger-3',
+          textContent: null,
+          fileUrl: 'https://example.com/signed/slide-1.png',
+          fileName: 'slide-1.png',
+          fileType: 'image/png',
+          accessibilityCaption: null,
+        }}
+        answered={false}
+        joining={false}
+        joinError={null}
+        onJoin={vi.fn()}
+        onSubmitAnswer={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
+
+    expect(screen.getAllByRole('img', { name: 'slide-1.png' })).toHaveLength(1);
+    fireEvent.click(screen.getByLabelText('Expandir slide'));
+    expect(screen.getAllByRole('img', { name: 'slide-1.png' })).toHaveLength(2);
+    fireEvent.click(screen.getByLabelText('Fechar'));
+    expect(screen.getAllByRole('img', { name: 'slide-1.png' })).toHaveLength(1);
+  });
+
+  it('keeps the plain download link for non-previewable attachments like doc', () => {
+    render(
+      <ModoAulaAluno
+        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        activity={null}
+        contentTrigger={{
+          id: 'trigger-4',
+          textContent: null,
+          fileUrl: 'https://example.com/signed/apostila.doc',
+          fileName: 'apostila.doc',
+          fileType: 'application/msword',
+          accessibilityCaption: null,
+        }}
+        answered={false}
+        joining={false}
+        joinError={null}
+        onJoin={vi.fn()}
+        onSubmitAnswer={vi.fn()}
+        onLeave={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('link', { name: /apostila\.doc/ })).toBeInTheDocument();
+    expect(screen.queryByRole('img')).not.toBeInTheDocument();
+  });
 });
 
 it('keeps incomplete classroom codes from being submitted', () => {

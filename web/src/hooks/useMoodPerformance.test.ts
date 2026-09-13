@@ -88,9 +88,10 @@ describe('useMoodPerformance', () => {
         { mood: 'muito_bem', accuracy: 100, sampleSize: 2 },
       ]),
     );
+    expect(result.current.isMock).toBe(false);
   });
 
-  it('excludes a mood bucket that has fewer than 2 answers', async () => {
+  it('falls back to mock buckets when fewer than 2 real buckets qualify', async () => {
     studentEventsResults = [
       { data: [{ created_at: '2026-09-10T08:00:00Z', payload_json: { mood: 'bem' } }], error: null },
       { data: [], error: null },
@@ -108,6 +109,7 @@ describe('useMoodPerformance', () => {
     const { result } = renderHook(() => useMoodPerformance('student-1'));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
-    expect(result.current.buckets).toEqual([]);
+    expect(result.current.isMock).toBe(true);
+    expect(result.current.buckets.length).toBeGreaterThan(0);
   });
 });

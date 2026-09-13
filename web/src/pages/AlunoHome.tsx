@@ -32,7 +32,7 @@ export function AlunoHome() {
     simulateImpulse,
   } = useInterceptaMission(studentId);
   const { progress } = useDomainProgress(studentId);
-  const { buckets: moodPerformance } = useMoodPerformance(studentId);
+  const { buckets: moodPerformance, isMock: moodPerformanceIsMock } = useMoodPerformance(studentId);
   const { recentMoods, loading: moodLoading, checkin } = useMoodCheckins(studentId);
   const { streak, activeToday, recentDays } = useStreak(studentId);
   const {
@@ -234,7 +234,7 @@ export function AlunoHome() {
               emptyMessage="Ainda sem progresso registrado."
             />
 
-            <MoodPerformanceInsight buckets={moodPerformance} />
+            <MoodPerformanceInsight buckets={moodPerformance} isMock={moodPerformanceIsMock} />
           </>
         )}
       </main>

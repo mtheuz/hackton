@@ -17,6 +17,8 @@ interface SimpleBarChartProps {
   emptyMessage: string;
   /** Skip the card chrome (border/shadow) when embedding inside a parent card. */
   bare?: boolean;
+  /** Small pill next to the title, e.g. flagging mocked demo data. */
+  badge?: string;
 }
 
 const CHART_HEIGHT_PX = 160;
@@ -60,14 +62,27 @@ function ChartTooltip({ active, payload }: ChartTooltipProps) {
   );
 }
 
-export function SimpleBarChart({ title, bars, emptyMessage, bare = false }: SimpleBarChartProps) {
+function TitleRow({ title, badge }: { title: string; badge?: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <h2 className="text-sm font-semibold text-ink-700">{title}</h2>
+      {badge && (
+        <span className="rounded-full bg-canvas px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-500">
+          {badge}
+        </span>
+      )}
+    </div>
+  );
+}
+
+export function SimpleBarChart({ title, bars, emptyMessage, bare = false, badge }: SimpleBarChartProps) {
   const Wrapper = bare ? 'div' : 'section';
   const wrapperClassName = bare ? undefined : CARD_CLASSNAME;
 
   if (bars.length === 0) {
     return (
       <Wrapper className={wrapperClassName}>
-        <h2 className="text-sm font-semibold text-ink-700">{title}</h2>
+        <TitleRow title={title} badge={badge} />
         <p className="mt-2 text-sm text-ink-500">{emptyMessage}</p>
       </Wrapper>
     );
@@ -75,7 +90,7 @@ export function SimpleBarChart({ title, bars, emptyMessage, bare = false }: Simp
 
   return (
     <Wrapper className={wrapperClassName}>
-      <h2 className="text-sm font-semibold text-ink-700">{title}</h2>
+      <TitleRow title={title} badge={badge} />
 
       <div aria-hidden="true" className="mt-4" style={{ height: CHART_HEIGHT_PX }}>
         <ResponsiveContainer width="100%" height="100%">

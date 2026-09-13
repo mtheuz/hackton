@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 import type { MoodPerformanceBucket, MoodValue } from '../types/intercepta';
 import type { QuizContent } from '../types/modoAula';
+import { MOCK_MOOD_PERFORMANCE_BUCKETS } from '../lib/mockMoodData';
 
 interface MoodEventRow {
   created_at: string;
@@ -31,13 +32,17 @@ function dayKey(iso: string): string {
   return iso.slice(0, 10);
 }
 
-export function useMoodPerformance(studentId: string): { buckets: MoodPerformanceBucket[]; loading: boolean } {
+export function useMoodPerformance(
+  studentId: string,
+): { buckets: MoodPerformanceBucket[]; loading: boolean; isMock: boolean } {
   const [buckets, setBuckets] = useState<MoodPerformanceBucket[]>([]);
+  const [isMock, setIsMock] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
     if (!studentId) {
       setBuckets([]);
+      setIsMock(false);
       setLoading(false);
       return;
     }
@@ -108,7 +113,14 @@ export function useMoodPerformance(studentId: string): { buckets: MoodPerformanc
       },
     );
 
-    setBuckets(result);
+    // Menos de 2 faixas com volume ainda não dá insight real — usa exemplo pra demo (produto.md: Raio-X pré-populado).
+    if (result.length < 2) {
+      setBuckets(MOCK_MOOD_PERFORMANCE_BUCKETS);
+      setIsMock(true);
+    } else {
+      setBuckets(result);
+      setIsMock(false);
+    }
     setLoading(false);
   }, [studentId]);
 
@@ -116,5 +128,5 @@ export function useMoodPerformance(studentId: string): { buckets: MoodPerformanc
     void refetch();
   }, [refetch]);
 
-  return { buckets, loading };
+  return { buckets, loading, isMock };
 }

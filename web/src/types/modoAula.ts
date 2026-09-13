@@ -27,6 +27,8 @@ export type SessionStatus = 'active' | 'finished';
 
 export interface LiveSession {
   id: string;
+  /** Only populated on the teacher side (useTeacherSession) — drives the class mood snapshot. */
+  classId?: string;
   code: string;
   status: SessionStatus;
   topic: string;

@@ -25,6 +25,7 @@ const sessionsBuilder = chainable({
   data: [
     {
       id: 'session-1',
+      class_id: 'class-1',
       code: '1234',
       status: 'active',
       topic: 'Frações',
@@ -136,6 +137,11 @@ describe('useTeacherSession', () => {
   it('exposes the session config loaded from the active session', async () => {
     const { result } = renderHook(() => useTeacherSession('teacher-1'));
     await waitFor(() => expect(result.current.sessionConfig).toEqual({ ...NO_CONFIG, accessibilityMode: true }));
+  });
+
+  it('exposes the class id of the active session', async () => {
+    const { result } = renderHook(() => useTeacherSession('teacher-1'));
+    await waitFor(() => expect(result.current.session?.classId).toBe('class-1'));
   });
 
   it('sends a text-only content trigger for the current session', async () => {

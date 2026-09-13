@@ -3,8 +3,10 @@ import type { ActivityContent, ContentTrigger, LiveActivity, LiveSession } from 
 import type { SessionConfig } from '../types/modoAula';
 import { useClassTranscription } from '../hooks/useClassTranscription';
 import { QrScannerModal } from './QrScannerModal';
+import { SlideFullscreenModal } from './SlideFullscreenModal';
 import CameraIcon from '~icons/twemoji/camera';
 import PaperclipIcon from '~icons/streamline-emojis/paperclip';
+import MagnifyingGlassIcon from '~icons/twemoji/magnifying-glass-tilted-right';
 
 function codeFromScan(value: string): string {
   try {
@@ -34,6 +36,11 @@ function optionsFromContent(content: ActivityContent): string[] | null {
 }
 
 function TriggerCard({ trigger }: { trigger: ContentTrigger }) {
+  const [expanded, setExpanded] = useState(false);
+  const isImage = trigger.fileType?.startsWith('image/') ?? false;
+  const isPdf = trigger.fileType === 'application/pdf';
+  const previewable = isImage || isPdf;
+
   return (
     <section className="rounded-2xl border border-brand-500 bg-brand-50 p-5 shadow-sm">
       <div className="flex items-center justify-between gap-2">
@@ -42,6 +49,40 @@ function TriggerCard({ trigger }: { trigger: ContentTrigger }) {
       </div>
       {trigger.textContent && (
         <p className="mt-1 whitespace-pre-wrap text-sm font-medium text-ink-700">{trigger.textContent}</p>
+      )}
+      {trigger.fileUrl && previewable && (
+        <div className="relative mt-2">
+          {isImage && (
+            <img
+              src={trigger.fileUrl}
+              alt={trigger.fileName ?? 'Slide'}
+              className="w-full rounded-lg border border-line-200 bg-surface"
+            />
+          )}
+          {isPdf && (
+            <iframe
+              title={trigger.fileName ?? 'Slide'}
+              src={trigger.fileUrl}
+              className="h-72 w-full rounded-lg border border-line-200 bg-surface"
+            />
+          )}
+          <button
+            type="button"
+            aria-label="Expandir slide"
+            onClick={() => setExpanded(true)}
+            className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 shadow-sm"
+          >
+            <MagnifyingGlassIcon aria-hidden className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+      {expanded && trigger.fileUrl && (
+        <SlideFullscreenModal
+          url={trigger.fileUrl}
+          fileType={trigger.fileType}
+          fileName={trigger.fileName ?? 'Slide'}
+          onClose={() => setExpanded(false)}
+        />
       )}
       {trigger.fileUrl && (
         <a

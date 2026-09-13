@@ -4,6 +4,7 @@ import { LogoutButton } from '../components/LogoutButton';
 import { useTeacherSession } from '../hooks/useTeacherSession';
 import { useSessionLiveStats } from '../hooks/useSessionLiveStats';
 import { useSessionDoubtCount } from '../hooks/useSessionDoubtCount';
+import { useClassMoodSnapshot } from '../hooks/useClassMoodSnapshot';
 import { useDisciplines } from '../hooks/useDisciplines';
 import { useLessons } from '../hooks/useLessons';
 import { fetchLessonSlides } from '../hooks/useLessonSlides';
@@ -43,6 +44,7 @@ export function ProfessorHome() {
   } = useTeacherSession(teacherId);
   const tally = useSessionLiveStats(session?.id ?? null, activity?.id ?? null, optionCountFor(activity));
   const doubtCount = useSessionDoubtCount(session?.id ?? null);
+  const { buckets: moodBuckets, loading: moodLoading, isMock: moodIsMock } = useClassMoodSnapshot(session?.classId ?? null);
   const { disciplines, createDiscipline, renameDiscipline } = useDisciplines(teacherId);
   const { lessons, loading: lessonsLoading, createLesson, updateLesson, deleteLesson } = useLessons(teacherId);
 
@@ -89,6 +91,9 @@ export function ProfessorHome() {
             tally={tally}
             doubtCount={doubtCount}
             pendingSlides={pendingSlides}
+            moodBuckets={moodBuckets}
+            moodLoading={moodLoading}
+            moodIsMock={moodIsMock}
             onStartSession={startSession}
             onEndSession={handleEndSession}
             onLaunchActivity={launchActivity}

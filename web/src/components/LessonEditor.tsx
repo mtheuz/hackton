@@ -130,7 +130,7 @@ export function LessonEditor({ lesson, onUpdateLesson, onClose }: LessonEditorPr
     slideType === 'material' ? materialText.trim().length > 0 || materialFile !== null : question.trim().length > 0 && !invalidOptions;
 
   return (
-    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm sm:p-6">
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-ink-700">Editar aula</h2>
         <button type="button" onClick={onClose} className="text-xs font-semibold text-ink-500">

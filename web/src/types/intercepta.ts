@@ -33,3 +33,8 @@ export interface MoodPerformanceBucket {
   accuracy: number;
   sampleSize: number;
 }
+
+export interface MoodSnapshotBucket {
+  mood: MoodValue;
+  count: number;
+}

@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { ModoAulaProfessor } from './ModoAulaProfessor';
 import type { SessionConfig } from '../types/modoAula';
+import { expandPptxToSlideImages } from '../lib/pptxSlides';
+
+vi.mock('../lib/pptxSlides', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../lib/pptxSlides')>();
+  return { ...actual, expandPptxToSlideImages: vi.fn() };
+});
 
 const NO_CONFIG: SessionConfig = {
   allowNotes: false,
@@ -75,6 +81,7 @@ describe('ModoAulaProfessor', () => {
       />,
     );
 
+    fireEvent.click(screen.getByText('Configurações da sessão'));
     fireEvent.click(screen.getByLabelText('Modo acessibilidade'));
     fireEvent.change(screen.getByLabelText('Tema da aula'), { target: { value: 'Frações' } });
     fireEvent.click(screen.getByText('Iniciar Modo Aula · Turma Demo'));
@@ -87,7 +94,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -114,7 +121,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={{
           id: 'activity-1',
@@ -142,7 +149,7 @@ describe('ModoAulaProfessor', () => {
     const { rerender } = render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={activity}
         tally={{ kind: 'options', counts: [0, 0] }}
@@ -158,7 +165,7 @@ describe('ModoAulaProfessor', () => {
     rerender(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={activity}
         tally={{ kind: 'options', counts: [0, 1] }}
@@ -176,7 +183,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -197,7 +204,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -222,7 +229,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={{ ...NO_CONFIG, accessibilityMode: true }}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -251,7 +258,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -275,7 +282,7 @@ describe('ModoAulaProfessor', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -299,7 +306,7 @@ describe('ModoAulaProfessor', () => {
 
 it('blocks empty or duplicate options so the quiz answer index stays valid', () => {
   const onLaunchActivity = vi.fn();
-  render(<ModoAulaProfessor classes={[]} session={{ id: 's1', code: '1234', status: 'active', topic: 'Frações' }} sessionConfig={NO_CONFIG} activity={null} tally={{ kind: 'options', counts: [] }} onStartSession={vi.fn()} onEndSession={vi.fn()} onLaunchActivity={onLaunchActivity} onSendContentTrigger={vi.fn()} />);
+  render(<ModoAulaProfessor classes={[]} session={{ id: 's1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }} sessionConfig={NO_CONFIG} activity={null} tally={{ kind: 'options', counts: [] }} onStartSession={vi.fn()} onEndSession={vi.fn()} onLaunchActivity={onLaunchActivity} onSendContentTrigger={vi.fn()} />);
   fireEvent.change(screen.getByLabelText('Pergunta'), { target: { value: 'Quanto é 2+2?' } });
   fireEvent.change(screen.getByPlaceholderText('Opção 2'), { target: { value: '4' } });
   fireEvent.click(screen.getByLabelText('Opção 2 é a correta'));
@@ -309,6 +316,130 @@ it('blocks empty or duplicate options so the quiz answer index stays valid', () 
   fireEvent.change(screen.getByPlaceholderText('Opção 1'), { target: { value: '3' } });
   fireEvent.click(screen.getByText('Lançar atividade'));
   expect(onLaunchActivity).toHaveBeenCalledWith('quiz', { question: 'Quanto é 2+2?', options: ['3', '4'], correct_index: 1 });
+});
+
+describe('ModoAulaProfessor pptx slide deck', () => {
+  it('expands an attached pptx into individually navigable slide images', async () => {
+    const slide1 = new File([new Uint8Array(1)], 'Aula-slide-1.png', { type: 'image/png' });
+    const slide2 = new File([new Uint8Array(1)], 'Aula-slide-2.png', { type: 'image/png' });
+    let resolveExpand!: (files: File[]) => void;
+    const pending = new Promise<File[]>((resolve) => {
+      resolveExpand = resolve;
+    });
+    vi.mocked(expandPptxToSlideImages).mockReturnValue(pending);
+
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    const pptxFile = new File([new Uint8Array(4)], 'Aula.pptx', {
+      type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    });
+    fireEvent.change(screen.getByLabelText('+ Anexar slides'), { target: { files: [pptxFile] } });
+
+    await waitFor(() => expect(screen.getByText('Processando apresentação...')).toBeInTheDocument());
+
+    await act(async () => {
+      resolveExpand([slide1, slide2]);
+      await pending;
+    });
+
+    await waitFor(() => expect(screen.getByText('1. Aula-slide-1.png')).toBeInTheDocument());
+    expect(screen.getByText('2. Aula-slide-2.png')).toBeInTheDocument();
+    expect(screen.queryByText('Processando apresentação...')).not.toBeInTheDocument();
+  });
+});
+
+describe('ModoAulaProfessor slide preview', () => {
+  it('shows an inline preview of the slide currently on screen, after it is pushed', async () => {
+    const onSendContentTrigger = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={onSendContentTrigger}
+      />,
+    );
+
+    const file = new File([new Uint8Array(1)], 'slide-1.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByLabelText('+ Anexar slides'), { target: { files: [file] } });
+
+    expect(screen.queryByRole('img', { name: 'slide-1.jpg' })).not.toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Apresentar'));
+    });
+
+    expect(await screen.findByRole('img', { name: 'slide-1.jpg' })).toBeInTheDocument();
+  });
+
+  it('opens a fullscreen view of the slide currently on screen', async () => {
+    const onSendContentTrigger = vi.fn().mockResolvedValue(undefined);
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={onSendContentTrigger}
+      />,
+    );
+
+    const file = new File([new Uint8Array(1)], 'slide-1.jpg', { type: 'image/jpeg' });
+    fireEvent.change(screen.getByLabelText('+ Anexar slides'), { target: { files: [file] } });
+    await act(async () => {
+      fireEvent.click(screen.getByText('Apresentar'));
+    });
+    await screen.findByRole('img', { name: 'slide-1.jpg' });
+
+    expect(screen.getAllByRole('img', { name: 'slide-1.jpg' })).toHaveLength(1);
+    fireEvent.click(screen.getByLabelText('Expandir slide'));
+    expect(screen.getAllByRole('img', { name: 'slide-1.jpg' })).toHaveLength(2);
+    fireEvent.click(screen.getByText('Fechar'));
+    expect(screen.getAllByRole('img', { name: 'slide-1.jpg' })).toHaveLength(1);
+  });
+});
+
+describe('ModoAulaProfessor mood snapshot', () => {
+  it('shows the class mood chart for the active session', () => {
+    render(
+      <ModoAulaProfessor
+        classes={[]}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
+        sessionConfig={NO_CONFIG}
+        activity={null}
+        tally={{ kind: 'options', counts: [] }}
+        moodBuckets={[{ mood: 'bem', count: 5 }]}
+        moodLoading={false}
+        onStartSession={vi.fn()}
+        onEndSession={vi.fn()}
+        onLaunchActivity={vi.fn()}
+        onSendContentTrigger={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Humor da turma hoje' })).toBeInTheDocument();
+  });
 });
 
 describe('ModoAulaProfessor with pending lesson slides', () => {
@@ -332,7 +463,7 @@ describe('ModoAulaProfessor with pending lesson slides', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}
@@ -354,7 +485,7 @@ describe('ModoAulaProfessor with pending lesson slides', () => {
     render(
       <ModoAulaProfessor
         classes={[]}
-        session={{ id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }}
+        session={{ id: 'session-1', classId: 'class-1', code: '1234', status: 'active', topic: 'Frações' }}
         sessionConfig={NO_CONFIG}
         activity={null}
         tally={{ kind: 'options', counts: [] }}

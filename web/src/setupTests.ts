@@ -32,3 +32,12 @@ if (!SVGGraphicsElement.prototype.getBBox) {
     return { x: 0, y: 0, width: 20, height: 14, top: 0, left: 0, right: 20, bottom: 14, toJSON() {} } as DOMRect;
   };
 }
+
+// jsdom doesn't implement the object URL registry — stub it so components
+// that preview locally attached files (e.g. the slide deck) don't crash.
+if (typeof URL.createObjectURL !== 'function') {
+  URL.createObjectURL = () => 'blob:mock-url';
+}
+if (typeof URL.revokeObjectURL !== 'function') {
+  URL.revokeObjectURL = () => {};
+}

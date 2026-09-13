@@ -3,8 +3,14 @@ import type { ChangeEvent } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import GearIcon from '~icons/twemoji/gear';
 import MegaphoneIcon from '~icons/twemoji/megaphone';
+import ProjectorIcon from '~icons/twemoji/film-projector';
+import BarChartIcon from '~icons/twemoji/bar-chart';
+import MagnifyingGlassIcon from '~icons/twemoji/magnifying-glass-tilted-right';
 import { ToggleSwitch } from './ToggleSwitch';
+import { ClassMoodToday } from './ClassMoodToday';
+import { SlideFullscreenModal } from './SlideFullscreenModal';
 import { CONTENT_FILE_ACCEPT, validateContentFile } from '../lib/contentFile';
+import { expandPptxToSlideImages, isPptxFile } from '../lib/pptxSlides';
 import type {
   ActivityContent,
   ActivityType,
@@ -15,6 +21,7 @@ import type {
   TeacherClass,
 } from '../types/modoAula';
 import type { LessonSlide } from '../types/lesson';
+import type { MoodSnapshotBucket } from '../types/intercepta';
 
 interface ModoAulaProfessorProps {
   classes: TeacherClass[];
@@ -24,6 +31,9 @@ interface ModoAulaProfessorProps {
   tally: AnswerTally;
   doubtCount?: number;
   pendingSlides?: LessonSlide[];
+  moodBuckets?: MoodSnapshotBucket[];
+  moodLoading?: boolean;
+  moodIsMock?: boolean;
   onStartSession: (classId: string, config: SessionConfig, topic: string) => Promise<void>;
   onEndSession: () => Promise<void>;
   onLaunchActivity: (type: ActivityType, content: ActivityContent) => Promise<void>;
@@ -60,6 +70,9 @@ export function ModoAulaProfessor({
   tally,
   doubtCount = 0,
   pendingSlides,
+  moodBuckets = [],
+  moodLoading = false,
+  moodIsMock = false,
   onStartSession,
   onEndSession,
   onLaunchActivity,
@@ -78,6 +91,7 @@ export function ModoAulaProfessor({
   const [ending, setEnding] = useState(false);
   const [config, setConfig] = useState<SessionConfig>(DEFAULT_CONFIG);
   const [topic, setTopic] = useState('');
+  const [configFormOpen, setConfigFormOpen] = useState(false);
   const [triggerFormOpen, setTriggerFormOpen] = useState(false);
   const [triggerContent, setTriggerContent] = useState('');
   const [triggerFile, setTriggerFile] = useState<File | null>(null);
@@ -86,7 +100,26 @@ export function ModoAulaProfessor({
   const [sendingTrigger, setSendingTrigger] = useState(false);
   const [newAnswerNotice, setNewAnswerNotice] = useState(false);
   const [launchingSlide, setLaunchingSlide] = useState(false);
+  const [deckFiles, setDeckFiles] = useState<File[]>([]);
+  const [deckFileError, setDeckFileError] = useState<string | null>(null);
+  const [expandingPptx, setExpandingPptx] = useState(false);
+  const [deckIndex, setDeckIndex] = useState<number | null>(null);
+  const [pushingDeckSlide, setPushingDeckSlide] = useState(false);
+  const [deckPreviewUrl, setDeckPreviewUrl] = useState<string | null>(null);
+  const [deckPreviewExpanded, setDeckPreviewExpanded] = useState(false);
   const previousAnswerCount = useRef(0);
+
+  const deckPreviewFile = deckIndex === null ? null : deckFiles[deckIndex] ?? null;
+
+  useEffect(() => {
+    if (!deckPreviewFile) {
+      setDeckPreviewUrl(null);
+      return;
+    }
+    const url = URL.createObjectURL(deckPreviewFile);
+    setDeckPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [deckPreviewFile]);
 
   const answerCount = tally.kind === 'options' ? tally.counts.reduce((a, b) => a + b, 0) : tally.texts.length;
 
@@ -102,8 +135,8 @@ export function ModoAulaProfessor({
 
   if (!session) {
     return (
-      <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
-        <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
+      <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm sm:p-6 lg:p-8">
+        <h2 className="text-sm font-semibold text-ink-700 lg:text-base">Modo Aula</h2>
         <p className="mt-1 text-xs text-ink-500">Escolha a turma e inicie a aula.</p>
         {error && <p role="alert" className="mt-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{error}</p>}
 
@@ -121,20 +154,32 @@ export function ModoAulaProfessor({
         </div>
 
         <div className="mt-4 rounded-xl border border-line-200 p-4">
-          <h3 className="flex items-center gap-1.5 text-xs font-semibold text-ink-700">
-            <GearIcon aria-hidden className="h-4 w-4" />
-            Configurações da sessão
-          </h3>
-          <div className="mt-2 flex flex-col gap-2">
-            {CONFIG_TOGGLES.map((toggle) => (
-              <ToggleSwitch
-                key={toggle.key}
-                label={toggle.label}
-                checked={Boolean(config[toggle.key])}
-                onChange={(checked) => setConfig({ ...config, [toggle.key]: checked })}
-              />
-            ))}
-          </div>
+          <button
+            type="button"
+            aria-expanded={configFormOpen}
+            onClick={() => setConfigFormOpen((open) => !open)}
+            className="flex w-full items-center justify-between text-xs font-semibold text-ink-700"
+          >
+            <span className="flex items-center gap-1.5">
+              <GearIcon aria-hidden className="h-4 w-4" />
+              Configurações da sessão
+            </span>
+            <span aria-hidden className="text-ink-500">
+              {configFormOpen ? '−' : '+'}
+            </span>
+          </button>
+          {configFormOpen && (
+            <div className="mt-3 flex flex-col gap-2">
+              {CONFIG_TOGGLES.map((toggle) => (
+                <ToggleSwitch
+                  key={toggle.key}
+                  label={toggle.label}
+                  checked={Boolean(config[toggle.key])}
+                  onChange={(checked) => setConfig({ ...config, [toggle.key]: checked })}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mt-3 flex flex-col gap-2">
@@ -255,15 +300,77 @@ export function ModoAulaProfessor({
     setTriggerFile(file);
   }
 
+  async function handleDeckFilesChange(e: ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (files.length === 0) return;
+
+    const valid: File[] = [];
+    let firstError: string | null = null;
+
+    for (const file of files) {
+      const err = validateContentFile(file);
+      if (err) {
+        firstError = firstError ?? err;
+        continue;
+      }
+      if (isPptxFile(file)) {
+        setExpandingPptx(true);
+        try {
+          valid.push(...(await expandPptxToSlideImages(file)));
+        } catch {
+          firstError = firstError ?? 'Não foi possível processar a apresentação. Tente novamente.';
+        } finally {
+          setExpandingPptx(false);
+        }
+      } else {
+        valid.push(file);
+      }
+    }
+
+    setDeckFileError(firstError);
+    setDeckFiles((prev) => [...prev, ...valid]);
+  }
+
+  function handleRemoveDeckFile(index: number) {
+    setDeckFiles((prev) => prev.filter((_, i) => i !== index));
+    setDeckIndex((prev) => {
+      if (prev === null) return prev;
+      if (index === prev) return null;
+      return index < prev ? prev - 1 : prev;
+    });
+  }
+
+  function handleClearDeck() {
+    setDeckFiles([]);
+    setDeckIndex(null);
+    setDeckFileError(null);
+  }
+
+  async function handlePushDeckSlide(index: number) {
+    const file = deckFiles[index];
+    if (!file) return;
+    setError(null);
+    setPushingDeckSlide(true);
+    try {
+      await onSendContentTrigger('', file);
+      setDeckIndex(index);
+    } catch {
+      setError('Não foi possível exibir esse slide. Tente novamente.');
+    } finally {
+      setPushingDeckSlide(false);
+    }
+  }
+
   const needsOptions = type === 'quiz' || type === 'poll';
   const invalidOptions = needsOptions && (options.some((option) => !option.trim()) || new Set(options.map((option) => option.trim().toLowerCase())).size !== options.length);
 
   return (
-    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm sm:p-6 lg:p-8">
       {error && <p role="alert" className="mb-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{error}</p>}
       {notice && <p role="status" className="mb-3 rounded-lg bg-success-50 p-3 text-sm text-success-600">{notice}</p>}
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="text-sm font-semibold text-ink-700 lg:text-base">Modo Aula</h2>
         <button
           type="button"
           disabled={ending}
@@ -273,32 +380,43 @@ export function ModoAulaProfessor({
           {ending ? 'Encerrando...' : 'Encerrar aula'}
         </button>
       </div>
-      {session.topic && <p className="mt-1 text-sm font-medium text-ink-700">{session.topic}</p>}
-      <p className="mt-2 text-3xl font-bold tracking-widest text-brand-600">{session.code}</p>
-      <p className="text-xs text-ink-500">Peça pros alunos entrarem com esse código ou escanear o QR.</p>
-      <p className="mt-2 text-xs font-semibold text-brand-600" aria-live="polite">{doubtCount} {doubtCount === 1 ? 'sinal de dúvida' : 'sinais de dúvida'} da turma</p>
-      <div className="mt-3 flex justify-center rounded-xl bg-surface p-4">
-        <QRCodeSVG value={`${window.location.origin}/aluno?code=${session.code}`} size={192} />
-      </div>
 
-      {pendingSlides && pendingSlides.length > 0 && onLaunchSlide && (
-        <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-line-200 bg-canvas p-3">
-          <p className="text-xs text-ink-700">
-            Próximo slide da aula ({pendingSlides.length} restante{pendingSlides.length > 1 ? 's' : ''})
-          </p>
-          <button
-            type="button"
-            disabled={launchingSlide}
-            onClick={() => void handleLaunchNextSlide()}
-            className="min-h-11 shrink-0 rounded-full bg-brand-600 px-4 text-xs font-semibold text-white disabled:opacity-50"
-          >
-            {launchingSlide ? 'Lançando...' : 'Avançar'}
-          </button>
+      <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-[300px_1fr] lg:items-start lg:gap-8">
+        <div className="lg:sticky lg:top-20 lg:space-y-3">
+          {session.topic && <p className="text-sm font-medium text-ink-700">{session.topic}</p>}
+          <p className="mt-2 text-3xl font-bold tracking-widest text-brand-600 lg:mt-0">{session.code}</p>
+          <p className="text-xs text-ink-500">Peça pros alunos entrarem com esse código ou escanear o QR.</p>
+          <p className="mt-2 text-xs font-semibold text-brand-600 lg:mt-0" aria-live="polite">{doubtCount} {doubtCount === 1 ? 'sinal de dúvida' : 'sinais de dúvida'} da turma</p>
+          <div className="mt-3 flex justify-center rounded-xl bg-surface p-4 lg:mt-0 lg:border lg:border-line-200">
+            <QRCodeSVG value={`${window.location.origin}/aluno?code=${session.code}`} size={192} />
+          </div>
+
+          {!moodLoading && (
+            <div className="mt-3 rounded-xl border border-line-200 p-4 lg:mt-0">
+              <ClassMoodToday buckets={moodBuckets} loading={moodLoading} isMock={moodIsMock} />
+            </div>
+          )}
+
+          {pendingSlides && pendingSlides.length > 0 && onLaunchSlide && (
+            <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-line-200 bg-canvas p-3 lg:mt-0 lg:flex-col lg:items-stretch lg:gap-3">
+              <p className="text-xs text-ink-700">
+                Próximo slide da aula ({pendingSlides.length} restante{pendingSlides.length > 1 ? 's' : ''})
+              </p>
+              <button
+                type="button"
+                disabled={launchingSlide}
+                onClick={() => void handleLaunchNextSlide()}
+                className="min-h-11 shrink-0 rounded-full bg-brand-600 px-4 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                {launchingSlide ? 'Lançando...' : 'Avançar'}
+              </button>
+            </div>
+          )}
         </div>
-      )}
 
+        <div className="min-w-0 space-y-4">
       {activity && !showLauncher ? (
-        <div className="mt-4 rounded-xl border border-line-200 p-4">
+        <div className="rounded-xl border border-line-200 p-4">
           <div className="flex items-center justify-between gap-2">
             <p className="text-sm font-medium text-ink-700">{activity.content.question}</p>
             {newAnswerNotice && (
@@ -353,7 +471,11 @@ export function ModoAulaProfessor({
           </button>
         </div>
       ) : (
-        <div className="mt-4 flex flex-col gap-2 rounded-xl border border-line-200 p-4">
+        <div className="flex flex-col gap-2 rounded-xl border border-line-200 p-4">
+          <h3 className="flex items-center gap-1.5 text-xs font-semibold text-ink-700">
+            <BarChartIcon aria-hidden className="h-4 w-4" />
+            Nova atividade
+          </h3>
           <label htmlFor="activity-type" className="text-xs font-semibold text-ink-700">
             Tipo
           </label>
@@ -425,7 +547,130 @@ export function ModoAulaProfessor({
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-line-200 p-4">
+      <div className="rounded-xl border border-line-200 p-4">
+        <h3 className="flex items-center gap-1.5 text-xs font-semibold text-ink-700">
+          <ProjectorIcon aria-hidden className="h-4 w-4" />
+          Slides da aula
+        </h3>
+        <p className="mt-1 text-xs text-ink-500">
+          Anexe imagens, PDFs ou uma apresentação (PPTX) e avance slide a slide — cada um aparece na tela do aluno ao vivo.
+        </p>
+
+        <label
+          htmlFor="deck-files"
+          aria-disabled={expandingPptx}
+          className="mt-3 inline-flex min-h-11 cursor-pointer items-center rounded-full bg-brand-50 px-4 text-xs font-semibold text-brand-600 aria-disabled:pointer-events-none aria-disabled:opacity-50"
+        >
+          + Anexar slides
+        </label>
+        <input
+          id="deck-files"
+          type="file"
+          multiple
+          disabled={expandingPptx}
+          accept={CONTENT_FILE_ACCEPT}
+          onChange={(e) => void handleDeckFilesChange(e)}
+          className="hidden"
+        />
+        {expandingPptx && (
+          <p role="status" className="mt-2 text-xs font-semibold text-brand-600">
+            Processando apresentação...
+          </p>
+        )}
+        {deckFileError && (
+          <p role="alert" className="mt-2 text-xs text-danger-600">
+            {deckFileError}
+          </p>
+        )}
+
+        {deckFiles.length > 0 && (
+          <>
+            <ul className="mt-3 flex flex-col gap-1.5">
+              {deckFiles.map((file, index) => (
+                <li
+                  key={`${file.name}-${index}`}
+                  className={[
+                    'flex items-center justify-between gap-2 rounded-lg px-3 py-1.5 text-xs',
+                    deckIndex === index ? 'bg-brand-50 font-semibold text-brand-600' : 'bg-canvas text-ink-700',
+                  ].join(' ')}
+                >
+                  <span className="min-w-0 flex-1 truncate">
+                    {index + 1}. {file.name}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label={`Remover ${file.name}`}
+                    onClick={() => handleRemoveDeckFile(index)}
+                    className="shrink-0 text-danger-600"
+                  >
+                    Remover
+                  </button>
+                </li>
+              ))}
+            </ul>
+
+            {deckPreviewFile && deckPreviewUrl && (
+              <div className="relative mt-3 overflow-hidden rounded-lg border border-line-200 bg-canvas">
+                {deckPreviewFile.type.startsWith('image/') ? (
+                  <img src={deckPreviewUrl} alt={deckPreviewFile.name} className="w-full" />
+                ) : deckPreviewFile.type === 'application/pdf' ? (
+                  <iframe title={deckPreviewFile.name} src={deckPreviewUrl} className="h-64 w-full" />
+                ) : (
+                  <p className="p-3 text-xs text-ink-500">{deckPreviewFile.name}</p>
+                )}
+                {(deckPreviewFile.type.startsWith('image/') || deckPreviewFile.type === 'application/pdf') && (
+                  <button
+                    type="button"
+                    aria-label="Expandir slide"
+                    onClick={() => setDeckPreviewExpanded(true)}
+                    className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-surface/90 shadow-sm"
+                  >
+                    <MagnifyingGlassIcon aria-hidden className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+            )}
+            {deckPreviewExpanded && deckPreviewFile && deckPreviewUrl && (
+              <SlideFullscreenModal
+                url={deckPreviewUrl}
+                fileType={deckPreviewFile.type}
+                fileName={deckPreviewFile.name}
+                onClose={() => setDeckPreviewExpanded(false)}
+              />
+            )}
+
+            <div className="mt-3 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                disabled={pushingDeckSlide || deckIndex === null || deckIndex <= 0}
+                onClick={() => void handlePushDeckSlide((deckIndex ?? 0) - 1)}
+                className="min-h-11 rounded-full border border-line-200 px-4 text-xs font-semibold text-ink-700 disabled:opacity-50"
+              >
+                Anterior
+              </button>
+              <span className="text-xs text-ink-500">
+                {deckIndex === null
+                  ? `${deckFiles.length} slide${deckFiles.length > 1 ? 's' : ''} pronto${deckFiles.length > 1 ? 's' : ''}`
+                  : `Slide ${deckIndex + 1} de ${deckFiles.length}`}
+              </span>
+              <button
+                type="button"
+                disabled={pushingDeckSlide || (deckIndex ?? -1) >= deckFiles.length - 1}
+                onClick={() => void handlePushDeckSlide((deckIndex ?? -1) + 1)}
+                className="min-h-11 rounded-full bg-brand-600 px-4 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                {pushingDeckSlide ? 'Enviando...' : deckIndex === null ? 'Apresentar' : 'Próximo'}
+              </button>
+            </div>
+
+            <button type="button" onClick={handleClearDeck} className="mt-2 text-xs font-semibold text-ink-500">
+              Remover apresentação
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-line-200 p-4">
         <button
           type="button"
           aria-expanded={triggerFormOpen}
@@ -491,6 +736,8 @@ export function ModoAulaProfessor({
             </button>
           </div>
         )}
+      </div>
+        </div>
       </div>
     </section>
   );

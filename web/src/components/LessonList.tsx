@@ -75,7 +75,7 @@ export function LessonList({
   }
 
   return (
-    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm sm:p-6">
       <h2 className="text-sm font-semibold text-ink-700">Aulas</h2>
       {error && <p role="alert" className="mt-3 rounded-lg bg-danger-50 p-3 text-sm text-danger-600">{error}</p>}
 

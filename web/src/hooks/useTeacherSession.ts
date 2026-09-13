@@ -14,6 +14,7 @@ const CONTENT_TRIGGER_BUCKET = 'content-triggers';
 
 interface SessionRow {
   id: string;
+  class_id: string;
   code: string;
   status: 'active' | 'finished';
   topic: string;
@@ -118,7 +119,7 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
     setLoading(true);
     const { data } = await supabase
       .from('sessions')
-      .select('id, code, status, topic, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
+      .select('id, class_id, code, status, topic, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
       .eq('teacher_id', teacherId)
       .eq('status', 'active')
       .order('created_at', { ascending: false })
@@ -126,7 +127,11 @@ export function useTeacherSession(teacherId: string): UseTeacherSessionResult {
 
     const rows = (data ?? []) as SessionRow[];
     const current = rows[0] ?? null;
-    setSession(current ? { id: current.id, code: current.code, status: current.status, topic: current.topic } : null);
+    setSession(
+      current
+        ? { id: current.id, classId: current.class_id, code: current.code, status: current.status, topic: current.topic }
+        : null,
+    );
     setSessionConfig(current ? configFromRow(current) : null);
     setLoading(false);
   }, [teacherId]);

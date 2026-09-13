@@ -16,9 +16,10 @@ const MOOD_DISPLAY: Record<MoodValue, { Icon: typeof DisappointedFaceIcon; label
 
 interface MoodPerformanceInsightProps {
   buckets: MoodPerformanceBucket[];
+  isMock?: boolean;
 }
 
-export function MoodPerformanceInsight({ buckets }: MoodPerformanceInsightProps) {
+export function MoodPerformanceInsight({ buckets, isMock = false }: MoodPerformanceInsightProps) {
   if (buckets.length < 2) return null;
 
   const best = buckets.reduce((a, b) => (b.accuracy > a.accuracy ? b : a));
@@ -39,7 +40,12 @@ export function MoodPerformanceInsight({ buckets }: MoodPerformanceInsightProps)
 
   return (
     <div className="space-y-3">
-      <SimpleBarChart title="Seu Raio-X: humor × acerto" bars={bars} emptyMessage="" />
+      <SimpleBarChart
+        title="Seu Raio-X: humor × acerto"
+        badge={isMock ? 'Exemplo' : undefined}
+        bars={bars}
+        emptyMessage=""
+      />
       {gap >= 15 && (
         <p className="text-xs leading-relaxed text-ink-500">
           Você acerta {gap} pontos a mais quando está{' '}

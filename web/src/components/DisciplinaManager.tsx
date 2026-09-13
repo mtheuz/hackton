@@ -28,7 +28,7 @@ export function DisciplinaManager({ disciplines, onCreate, onRename }: Disciplin
   }
 
   return (
-    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm sm:p-6">
       <h2 className="flex items-center gap-1.5 text-sm font-semibold text-ink-700">
         <MemoIcon aria-hidden className="h-4 w-4" />
         Disciplinas

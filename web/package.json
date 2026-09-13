@@ -13,7 +13,9 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.116.0",
     "@tanstack/react-query": "^5.102.8",
+    "html2canvas": "^1.4.1",
     "jsqr": "^1.4.0",
+    "pptx-preview": "^1.0.7",
     "qrcode.react": "^4.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
