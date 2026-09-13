@@ -26,6 +26,7 @@ interface ModoAulaAlunoProps {
   onJoin: (code: string) => Promise<void>;
   onSubmitAnswer: (payload: { selectedIndex?: number; text?: string }) => Promise<void>;
   onLeave: () => void;
+  onSignalDoubt?: () => Promise<void>;
 }
 
 function optionsFromContent(content: ActivityContent): string[] | null {
@@ -69,12 +70,15 @@ export function ModoAulaAluno({
   onJoin,
   onSubmitAnswer,
   onLeave,
+  onSignalDoubt = async () => {},
 }: ModoAulaAlunoProps) {
   const [answerError, setAnswerError] = useState<string | null>(null);
   const [code, setCode] = useState(initialCode ?? '');
   const [text, setText] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [doubtSent, setDoubtSent] = useState(false);
+  const [doubtSending, setDoubtSending] = useState(false);
   const transcription = useClassTranscription(Boolean(sessionConfig?.allowTranscription));
 
   async function handleAnswer(payload: { selectedIndex?: number; text?: string }) {
@@ -96,13 +100,16 @@ export function ModoAulaAluno({
     if (scannedCode) void onJoin(scannedCode);
   }
 
-  if (!session || session.status === 'finished') {
+  async function handleDoubt() {
+    if (doubtSending || doubtSent) return;
+    setDoubtSending(true);
+    try { await onSignalDoubt(); setDoubtSent(true); } finally { setDoubtSending(false); }
+  }
+
+  if (!session) {
     return (
       <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-ink-700">Modo Aula</h2>
-        {session?.status === 'finished' && (
-          <p className="mt-1 text-xs text-ink-500">Aula encerrada. Até a próxima!</p>
-        )}
         <form onSubmit={(event) => { event.preventDefault(); if (!joining && /^\d{4}$/.test(code)) void onJoin(code); }} className="mt-3 flex gap-2">
           <input
             value={code}
@@ -153,6 +160,14 @@ export function ModoAulaAluno({
         </section>
       </div>
     );
+  }
+
+  if (session.status === 'finished') {
+    return <div className="space-y-4">{contentTrigger && <TriggerCard trigger={contentTrigger} />}<section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm"><h2 className="text-sm font-semibold text-ink-700">Aula encerrada</h2><p className="mt-1 text-xs text-ink-500">Obrigado por participar. O professor encerrou esta sessão.</p>{sessionConfig?.quizAtEnd && activity && <div className="mt-3 rounded-xl border border-brand-100 bg-brand-50 p-3 text-sm font-medium text-brand-700">Quiz final disponível para revisão: {activity.content.question}</div>}</section></div>;
+  }
+
+  if (sessionConfig?.quizAtEnd) {
+    return <div className="space-y-4">{contentTrigger && <TriggerCard trigger={contentTrigger} />}<section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm"><h2 className="text-sm font-semibold text-ink-700">Quiz da aula</h2><p className="mt-1 text-xs text-ink-500">O quiz será liberado quando o professor encerrar a aula.</p><div className="mt-3 rounded-lg bg-canvas p-3 text-xs text-ink-500">🔒 Atividade reservada para o final</div></section></div>;
   }
 
   if (answered) {
@@ -210,6 +225,7 @@ export function ModoAulaAluno({
             </button>
           </div>
         )}
+        <div className="mt-4 flex items-center justify-between gap-3 border-t border-line-200 pt-3"><button type="button" onClick={() => void handleDoubt()} disabled={doubtSending || doubtSent} className="min-h-11 rounded-full border border-line-200 px-3 text-xs font-semibold text-ink-700">{doubtSent ? '✓ Dúvida sinalizada' : doubtSending ? 'Enviando…' : '🙋 Sinalizar dúvida'}</button><p className="text-right text-xs text-ink-500">O professor vê apenas a contagem.</p></div>
       </section>
     </div>
   );

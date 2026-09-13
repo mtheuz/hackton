@@ -30,6 +30,8 @@ export interface LiveSession {
   code: string;
   status: SessionStatus;
   topic: string;
+  teacherName?: string;
+  createdAt?: string;
 }
 
 export interface TeacherClass {

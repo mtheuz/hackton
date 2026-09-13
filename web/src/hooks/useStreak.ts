@@ -1,9 +1,17 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '../services/supabaseClient';
 
+export interface DayStreakItem {
+  dayKey: string;
+  dayLabel: string;
+  active: boolean;
+  isToday: boolean;
+}
+
 interface StreakResult {
   streak: number;
   activeToday: boolean;
+  recentDays: DayStreakItem[];
   loading: boolean;
 }
 
@@ -28,15 +36,36 @@ function computeStreak(dayKeys: Set<string>): { streak: number; activeToday: boo
   return { streak, activeToday: dayKeys.has(todayKey) };
 }
 
+function computeRecentDays(dayKeys: Set<string>): DayStreakItem[] {
+  const days: DayStreakItem[] = [];
+  const today = new Date();
+  const todayKey = dayKey(today);
+  const dayNames = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(today.getTime() - i * 86_400_000);
+    const dKey = dayKey(d);
+    days.push({
+      dayKey: dKey,
+      dayLabel: dayNames[d.getDay()],
+      active: dayKeys.has(dKey),
+      isToday: dKey === todayKey,
+    });
+  }
+  return days;
+}
+
 export function useStreak(studentId: string): StreakResult {
   const [streak, setStreak] = useState(0);
   const [activeToday, setActiveToday] = useState(false);
+  const [recentDays, setRecentDays] = useState<DayStreakItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refetch = useCallback(async () => {
     if (!studentId) {
       setStreak(0);
       setActiveToday(false);
+      setRecentDays([]);
       setLoading(false);
       return;
     }
@@ -52,6 +81,7 @@ export function useStreak(studentId: string): StreakResult {
     const result = computeStreak(dayKeys);
     setStreak(result.streak);
     setActiveToday(result.activeToday);
+    setRecentDays(computeRecentDays(dayKeys));
     setLoading(false);
   }, [studentId]);
 
@@ -59,5 +89,5 @@ export function useStreak(studentId: string): StreakResult {
     void refetch();
   }, [refetch]);
 
-  return { streak, activeToday, loading };
+  return { streak, activeToday, recentDays, loading };
 }

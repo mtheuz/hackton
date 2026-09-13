@@ -16,6 +16,8 @@ interface SessionRow {
   code: string;
   status: 'active' | 'finished';
   topic: string;
+  teacher_id: string;
+  created_at: string;
   allow_notes: boolean;
   allow_free_chatbot: boolean;
   focus_mode: boolean;
@@ -50,6 +52,7 @@ interface UseLiveSessionResult {
   join: (code: string) => Promise<void>;
   submitAnswer: (payload: { selectedIndex?: number; text?: string }) => Promise<void>;
   leave: () => void;
+  signalDoubt: () => Promise<void>;
 }
 
 export function useLiveSession(studentId: string): UseLiveSessionResult {
@@ -114,10 +117,10 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
   const refetchSessionStatus = useCallback(async (sessionId: string) => {
     const { data } = await supabase
       .from('sessions')
-      .select('id, code, status, topic, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
+      .select('id, code, status, topic, teacher_id, created_at, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
       .eq('id', sessionId)
       .maybeSingle<SessionRow>();
-    if (data) { setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic }); setSessionConfig({ allowNotes: data.allow_notes, allowFreeChatbot: data.allow_free_chatbot, focusMode: data.focus_mode, quizAtEnd: data.quiz_at_end, accessibilityMode: data.accessibility_mode, allowTranscription: data.allow_transcription }); }
+    if (data) { const { data: teacher } = data.teacher_id ? await supabase.from('users').select('name').eq('id', data.teacher_id).maybeSingle<{ name: string }>() : { data: null }; setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic, teacherName: teacher?.name, createdAt: data.created_at }); setSessionConfig({ allowNotes: data.allow_notes, allowFreeChatbot: data.allow_free_chatbot, focusMode: data.focus_mode, quizAtEnd: data.quiz_at_end, accessibilityMode: data.accessibility_mode, allowTranscription: data.allow_transcription }); }
   }, []);
 
   useEffect(() => {
@@ -159,7 +162,7 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
     try {
       const { data, error } = await supabase
         .from('sessions')
-        .select('id, code, status, topic, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
+        .select('id, code, status, topic, teacher_id, created_at, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
         .eq('code', code)
         .eq('status', 'active')
         .maybeSingle<SessionRow>();
@@ -173,7 +176,8 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
       setContentTrigger(null);
       setAnswered(false);
       setSessionConfig({ allowNotes: data.allow_notes, allowFreeChatbot: data.allow_free_chatbot, focusMode: data.focus_mode, quizAtEnd: data.quiz_at_end, accessibilityMode: data.accessibility_mode, allowTranscription: data.allow_transcription });
-      setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic });
+      const { data: teacher } = data.teacher_id ? await supabase.from('users').select('name').eq('id', data.teacher_id).maybeSingle<{ name: string }>() : { data: null };
+      setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic, teacherName: teacher?.name, createdAt: data.created_at });
     } catch {
       setJoinError('Não foi possível entrar na aula. Confira sua conexão e tente novamente.');
     } finally {
@@ -211,5 +215,11 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
     setSessionConfig(null);
   }, []);
 
-  return { session, activity, contentTrigger, sessionConfig, answered, joining, joinError, join, submitAnswer, leave };
+  const signalDoubt = useCallback(async () => {
+    if (!session) return;
+    const { error } = await supabase.from('student_events').insert({ student_id: studentId, session_id: session.id, event_type: 'doubt_signaled', payload_json: {}, pf_earned: 0 });
+    if (error) throw error;
+  }, [session, studentId]);
+
+  return { session, activity, contentTrigger, sessionConfig, answered, joining, joinError, join, submitAnswer, leave, signalDoubt };
 }

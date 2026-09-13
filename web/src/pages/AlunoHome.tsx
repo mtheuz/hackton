@@ -18,6 +18,7 @@ import { ChatTutor } from '../components/ChatTutor';
 import { AlunoTabBar, type AlunoTab } from '../components/AlunoTabBar';
 import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
 import RobotIcon from '~icons/streamline-emojis/robot-face-1';
+import FireIcon from '~icons/streamline-emojis/fire';
 
 export function AlunoHome() {
   const user = useAuthStore((s) => s.user);
@@ -33,7 +34,7 @@ export function AlunoHome() {
   const { progress } = useDomainProgress(studentId);
   const { buckets: moodPerformance } = useMoodPerformance(studentId);
   const { recentMoods, loading: moodLoading, checkin } = useMoodCheckins(studentId);
-  const { streak, activeToday } = useStreak(studentId);
+  const { streak, activeToday, recentDays } = useStreak(studentId);
   const {
     session: liveSession,
     activity: liveActivity,
@@ -45,6 +46,7 @@ export function AlunoHome() {
     join: joinLiveSession,
     submitAnswer: submitLiveAnswer,
     leave: leaveLiveSession,
+    signalDoubt,
   } = useLiveSession(studentId);
 
   const [searchParams] = useSearchParams();
@@ -68,6 +70,7 @@ export function AlunoHome() {
   const showMoodPrompt = !moodLoading && !moodPromptDismissed;
 
   const firstName = user.name.split(' ')[0];
+  const sessionDate = liveSession?.createdAt ? new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(liveSession.createdAt)) : null;
   const tabMascot: Record<AlunoTab, { src: string; alt: string; headline: string; sub: string }> = {
     aula: {
       src: sessionActive ? '/aluno-mascot-ninja.png' : '/aluno-mascot.png',
@@ -109,6 +112,8 @@ export function AlunoHome() {
             <p className={aulaMode ? 'text-xs text-white/60' : 'text-xs text-ink-500'}>{aulaMode ? 'Você está em' : 'Olá,'}</p>
             <h1 className={aulaMode ? 'text-base font-semibold text-white' : 'text-base font-semibold text-ink-700'}>{aulaMode ? 'Modo Aula' : user.name}</h1>
             {aulaMode && liveSession.topic && <p className="mt-0.5 max-w-[14rem] truncate text-xs text-white/70" title={liveSession.topic}>{liveSession.topic}</p>}
+            {aulaMode && liveSession.teacherName && <p className="max-w-[14rem] truncate text-xs text-white/60">Prof. {liveSession.teacherName}</p>}
+            {aulaMode && sessionDate && <p className="text-[11px] text-white/50">{sessionDate}</p>}
           </div>
           <div className="flex items-center gap-2">
             {aulaMode ? <button type="button" onClick={leaveLiveSession} className="min-h-11 rounded-full border border-white/30 px-3 text-xs font-semibold text-white transition-colors hover:border-white/60">Sair da aula</button> : <><StreakBadge streak={streak} activeToday={activeToday} /><div className="flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1.5"><SynchronizeArrowIcon aria-hidden className="h-4 w-4" /><span className="text-xs font-semibold text-brand-600">{completedCount}</span></div><LogoutButton /></>}
@@ -151,6 +156,7 @@ export function AlunoHome() {
             onJoin={joinLiveSession}
             onSubmitAnswer={submitLiveAnswer}
             onLeave={leaveLiveSession}
+            onSignalDoubt={signalDoubt}
           />
         )}
 
@@ -166,6 +172,53 @@ export function AlunoHome() {
 
         {tab === 'progresso' && (
           <>
+            <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm" aria-label="Ofensiva de estudos">
+              <div className="flex items-start gap-3">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-warning-50 text-warning-600" aria-hidden>
+                  <FireIcon className="h-6 w-6" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-ink-500">Ofensiva de estudos</p>
+                    <span className="rounded-full bg-brand-50 px-2.5 py-1 text-xs font-semibold text-brand-600">
+                      {activeToday ? 'Hoje contado' : 'Hoje pendente'}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-2xl font-semibold tracking-tight text-ink-700">
+                    {streak} <span className="text-sm font-medium text-ink-500">{streak === 1 ? 'dia' : 'dias'}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center justify-between rounded-xl bg-canvas/70 px-3 py-3 border border-line-200/60">
+                {recentDays.map((day) => (
+                  <div key={day.dayKey} className="flex flex-col items-center gap-1.5">
+                    <div
+                      className={`flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full transition-all duration-300 ${
+                        day.active
+                          ? 'bg-gradient-to-tr from-amber-500 to-amber-400 text-white shadow-sm scale-105'
+                          : 'bg-line-200/90 text-transparent'
+                      } ${day.isToday && !day.active ? 'ring-2 ring-amber-400/60 ring-offset-1' : ''}`}
+                    >
+                      {day.active ? (
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 stroke-[3]" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                      ) : (
+                        <span className="h-1.5 w-1.5 rounded-full bg-ink-300/40" />
+                      )}
+                    </div>
+                    <span className={`text-[11px] font-medium ${day.isToday ? 'font-bold text-brand-600' : 'text-ink-500'}`}>
+                      {day.dayLabel}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <p className="mt-3 text-xs leading-relaxed text-ink-500">
+                {activeToday ? 'Você já praticou hoje. Continue no seu ritmo!' : 'Uma prática curta hoje mantém sua ofensiva ativa.'}
+              </p>
+            </section>
             <SimpleBarChart
               title="Seu progresso"
               bars={progress.map((p) => ({

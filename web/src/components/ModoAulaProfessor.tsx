@@ -22,6 +22,7 @@ interface ModoAulaProfessorProps {
   sessionConfig: SessionConfig | null;
   activity: LiveActivity | null;
   tally: AnswerTally;
+  doubtCount?: number;
   pendingSlides?: LessonSlide[];
   onStartSession: (classId: string, config: SessionConfig, topic: string) => Promise<void>;
   onEndSession: () => Promise<void>;
@@ -57,6 +58,7 @@ export function ModoAulaProfessor({
   sessionConfig,
   activity,
   tally,
+  doubtCount = 0,
   pendingSlides,
   onStartSession,
   onEndSession,
@@ -274,6 +276,7 @@ export function ModoAulaProfessor({
       {session.topic && <p className="mt-1 text-sm font-medium text-ink-700">{session.topic}</p>}
       <p className="mt-2 text-3xl font-bold tracking-widest text-brand-600">{session.code}</p>
       <p className="text-xs text-ink-500">Peça pros alunos entrarem com esse código ou escanear o QR.</p>
+      <p className="mt-2 text-xs font-semibold text-brand-600" aria-live="polite">{doubtCount} {doubtCount === 1 ? 'sinal de dúvida' : 'sinais de dúvida'} da turma</p>
       <div className="mt-3 flex justify-center rounded-xl bg-surface p-4">
         <QRCodeSVG value={`${window.location.origin}/aluno?code=${session.code}`} size={192} />
       </div>

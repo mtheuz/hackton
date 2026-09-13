@@ -3,6 +3,7 @@ import { useAuthStore } from '../store/useAuthStore';
 import { LogoutButton } from '../components/LogoutButton';
 import { useTeacherSession } from '../hooks/useTeacherSession';
 import { useSessionLiveStats } from '../hooks/useSessionLiveStats';
+import { useSessionDoubtCount } from '../hooks/useSessionDoubtCount';
 import { useDisciplines } from '../hooks/useDisciplines';
 import { useLessons } from '../hooks/useLessons';
 import { fetchLessonSlides } from '../hooks/useLessonSlides';
@@ -41,6 +42,7 @@ export function ProfessorHome() {
     assignDiscipline,
   } = useTeacherSession(teacherId);
   const tally = useSessionLiveStats(session?.id ?? null, activity?.id ?? null, optionCountFor(activity));
+  const doubtCount = useSessionDoubtCount(session?.id ?? null);
   const { disciplines, createDiscipline, renameDiscipline } = useDisciplines(teacherId);
   const { lessons, loading: lessonsLoading, createLesson, updateLesson, deleteLesson } = useLessons(teacherId);
 
@@ -85,6 +87,7 @@ export function ProfessorHome() {
             sessionConfig={sessionConfig}
             activity={activity}
             tally={tally}
+            doubtCount={doubtCount}
             pendingSlides={pendingSlides}
             onStartSession={startSession}
             onEndSession={handleEndSession}
