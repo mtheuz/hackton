@@ -143,6 +143,8 @@ export function AlunoHome() {
         </section>
 
         {tab === 'aula' && (
+          <>
+          {sessionActive && !liveContentTrigger && <section className="challenge-question-3d rounded-2xl border p-5 shadow-sm"><div className="flex items-center justify-between gap-2"><h2 className="text-xs font-semibold uppercase tracking-wide text-ink-500">Apresentação do professor</h2><span className="rounded-full bg-brand-50 px-2 py-1 text-[10px] font-semibold text-brand-600">Slide atual</span></div><p className="mt-2 text-xs text-ink-500">Aguardando o professor apresentar um slide ou material.</p></section>}
           <ModoAulaAluno
             key={`${liveSession?.id ?? "join"}:${liveActivity?.id ?? "waiting"}`}
             session={liveSession}
@@ -158,6 +160,7 @@ export function AlunoHome() {
             onLeave={leaveLiveSession}
             onSignalDoubt={signalDoubt}
           />
+          </>
         )}
 
         {tab === 'intercepta' && (
@@ -172,7 +175,7 @@ export function AlunoHome() {
 
         {tab === 'progresso' && (
           <>
-            <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm" aria-label="Ofensiva de estudos">
+            <section className="streak-card-3d rounded-2xl border p-5 shadow-sm" aria-label="Ofensiva de estudos">
               <div className="flex items-start gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-warning-50 text-warning-600" aria-hidden>
                   <FireIcon className="h-6 w-6" />

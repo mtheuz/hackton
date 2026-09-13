@@ -1,0 +1,3 @@
+insert into activities (id, session_id, type, content_json) values
+  ('66666666-6666-6666-6666-666666666690', '55555555-5555-5555-5555-555555555555', 'open_question', '{"subject":"historia","question":"Qual foi uma consequência importante da Revolução Industrial?","options":[],"correct_index":-1,"pf_reward":10,"answer_type":"open","attachment_allowed":true}'),
+  ('66666666-6666-6666-6666-666666666691', '55555555-5555-5555-5555-555555555555', 'open_question', '{"subject":"ciencias","question":"Explique com suas palavras como economizar água no dia a dia.","options":[],"correct_index":-1,"pf_reward":10,"answer_type":"open","attachment_allowed":false}');

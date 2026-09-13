@@ -13,7 +13,7 @@ interface UseInterceptaMissionResult {
   mission: PendingMission | null;
   completedCount: number;
   loading: boolean;
-  completeMission: (selectedIndex: number) => Promise<void>;
+  completeMission: (answer: number | { text: string; fileName?: string }) => Promise<void>;
   simulateImpulse: () => Promise<void>;
 }
 
@@ -70,7 +70,7 @@ export function useInterceptaMission(studentId: string): UseInterceptaMissionRes
   const triggerNextMission = useCallback(
     async (excludeActivityId?: string) => {
       if (!studentId) return;
-      const { data } = await supabase.from('activities').select('id').eq('type', 'quiz');
+      const { data } = await supabase.from('activities').select('id').in('type', ['quiz', 'open_question']);
       let activities = (data ?? []) as { id: string }[];
       if (excludeActivityId && activities.length > 1) {
         activities = activities.filter((a) => a.id !== excludeActivityId);
@@ -89,16 +89,17 @@ export function useInterceptaMission(studentId: string): UseInterceptaMissionRes
   );
 
   const completeMission = useCallback(
-    async (selectedIndex: number) => {
+    async (answer: number | { text: string; fileName?: string }) => {
       if (!mission) return;
-      const correct = selectedIndex === mission.content.correct_index;
+      const selectedIndex = typeof answer === 'number' ? answer : undefined;
+      const correct = selectedIndex !== undefined && selectedIndex === mission.content.correct_index;
       const pfEarned = mission.content.pf_reward;
 
       const { error: eventError } = await supabase.from('student_events').insert({
         student_id: studentId,
         session_id: null,
         event_type: 'intercepta_mission',
-        payload_json: { activity_id: mission.activityId, selected_index: selectedIndex, correct },
+        payload_json: { activity_id: mission.activityId, selected_index: selectedIndex, text: typeof answer === 'number' ? undefined : answer.text, file_name: typeof answer === 'number' ? undefined : answer.fileName, correct },
         pf_earned: pfEarned,
       });
       if (eventError) throw eventError;

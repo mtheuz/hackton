@@ -36,7 +36,10 @@ function optionsFromContent(content: ActivityContent): string[] | null {
 function TriggerCard({ trigger }: { trigger: ContentTrigger }) {
   return (
     <section className="rounded-2xl border border-brand-500 bg-brand-50 p-5 shadow-sm">
-      <h2 className="text-xs font-semibold uppercase tracking-wide text-brand-600">Material do professor</h2>
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-xs font-semibold uppercase tracking-wide text-brand-600">Apresentação do professor</h2>
+        <span className="rounded-full bg-brand-100 px-2 py-1 text-[10px] font-semibold text-brand-600">Slide atual</span>
+      </div>
       {trigger.textContent && (
         <p className="mt-1 whitespace-pre-wrap text-sm font-medium text-ink-700">{trigger.textContent}</p>
       )}
@@ -57,6 +60,7 @@ function TriggerCard({ trigger }: { trigger: ContentTrigger }) {
     </section>
   );
 }
+
 
 export function ModoAulaAluno({
   session,

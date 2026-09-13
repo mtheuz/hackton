@@ -1,9 +1,11 @@
 export interface MissionActivityContent {
   subject: string;
   question: string;
-  options: string[];
+  options?: string[];
   correct_index: number;
   pf_reward: number;
+  answer_type?: 'multiple_choice' | 'open';
+  attachment_allowed?: boolean;
 }
 
 export interface PendingMission {

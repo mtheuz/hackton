@@ -73,6 +73,11 @@ button {
 .grym-button-press:hover:not(:disabled) { filter: brightness(1.04); box-shadow: 0 3px 10px rgb(14 90 150 / 14%); }
 .grym-button-press:active:not(:disabled) { transform: scale(.97); }
 .grym-input-glow:focus { box-shadow: 0 0 0 3px rgb(20 105 159 / 14%), 0 0 18px rgb(20 105 159 / 10%); }
+.challenge-question-3d, .streak-card-3d { background: var(--color-brand-600); border-color: var(--color-brand-700); color: white; box-shadow: 0 4px 0 var(--color-brand-800), 0 8px 14px rgb(10 67 112 / 16%); transform: translateY(-1px); }
+.challenge-question-3d .text-brand-600, .challenge-question-3d .text-ink-700, .challenge-question-3d .text-ink-500, .streak-card-3d .text-brand-600, .streak-card-3d .text-ink-700, .streak-card-3d .text-ink-500 { color: white; }
+.challenge-question-3d .bg-brand-50 { background: var(--color-brand-700); color: white; }
+.streak-card-3d .bg-warning-50 { background: rgb(255 255 255 / 18%); }
+.streak-card-3d .bg-brand-50 { background: var(--color-brand-700); color: white; }
 button:not(:disabled) { transition: transform 150ms ease, filter 150ms ease, box-shadow 150ms ease; }
 button:not(:disabled):hover { filter: brightness(1.025); }
 button:not(:disabled):active { transform: scale(.98); }
