@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis } from 'recharts';
 
 export interface BarDatum {
   key: string;
@@ -18,8 +19,46 @@ interface SimpleBarChartProps {
   bare?: boolean;
 }
 
-const CHART_HEIGHT_PX = 140;
+const CHART_HEIGHT_PX = 160;
 const CARD_CLASSNAME = 'rounded-2xl border border-line-200 bg-surface p-5 shadow-sm';
+const BRAND_600 = '#0E5A96';
+const INK_700 = '#20202A';
+
+interface AxisTickProps {
+  x?: number | string;
+  y?: number | string;
+  payload?: { value: string };
+}
+
+function AxisTick({ x = 0, y = 0, payload, bars }: AxisTickProps & { bars: BarDatum[] }) {
+  const bar = bars.find((b) => b.label === payload?.value);
+  const numX = Number(x);
+  const numY = Number(y);
+  return (
+    <foreignObject x={numX - 28} y={numY + 4} width={56} height={40}>
+      <div className="flex flex-col items-center gap-0.5 text-center text-[11px] leading-tight text-ink-500">
+        {bar?.icon}
+        <span className="truncate">{payload?.value}</span>
+      </div>
+    </foreignObject>
+  );
+}
+
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: { payload: BarDatum }[];
+}
+
+function ChartTooltip({ active, payload }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null;
+  const bar = payload[0]?.payload;
+  if (!bar) return null;
+  return (
+    <div className="rounded-lg border border-line-200 bg-surface px-2.5 py-1.5 text-xs font-semibold text-ink-700 shadow-sm">
+      {bar.label}: {bar.displayValue}
+    </div>
+  );
+}
 
 export function SimpleBarChart({ title, bars, emptyMessage, bare = false }: SimpleBarChartProps) {
   const Wrapper = bare ? 'div' : 'section';
@@ -34,36 +73,27 @@ export function SimpleBarChart({ title, bars, emptyMessage, bare = false }: Simp
     );
   }
 
-  const maxValue = Math.max(...bars.map((bar) => bar.value), 1);
-
   return (
     <Wrapper className={wrapperClassName}>
       <h2 className="text-sm font-semibold text-ink-700">{title}</h2>
 
-      <div
-        aria-hidden="true"
-        className="mt-4 flex items-stretch justify-between gap-3"
-        style={{ height: CHART_HEIGHT_PX }}
-      >
-        {bars.map((bar) => {
-          const pct = Math.max(4, Math.round((bar.value / maxValue) * 100));
-          return (
-            <div key={bar.key} className="flex flex-1 flex-col items-center">
-              <span className="text-center text-xs font-semibold text-ink-700">{bar.displayValue}</span>
-              <div className="mt-1 flex w-full flex-1 items-end justify-center">
-                <div
-                  data-bar-fill="true"
-                  className="w-full max-w-6 rounded-t-[4px] bg-brand-600"
-                  style={{ height: `${pct}%` }}
-                />
-              </div>
-              <span className="mt-1.5 flex items-center gap-1 text-center text-[11px] leading-tight text-ink-500">
-                {bar.icon}
-                {bar.label}
-              </span>
-            </div>
-          );
-        })}
+      <div aria-hidden="true" className="mt-4" style={{ height: CHART_HEIGHT_PX }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={bars} margin={{ top: 20, right: 8, bottom: 4, left: 8 }}>
+            <XAxis
+              dataKey="label"
+              axisLine={false}
+              tickLine={false}
+              interval={0}
+              height={40}
+              tick={(props: AxisTickProps) => <AxisTick {...props} bars={bars} />}
+            />
+            <Tooltip content={<ChartTooltip />} cursor={{ fill: 'var(--color-canvas)' }} />
+            <Bar dataKey="value" fill={BRAND_600} radius={[4, 4, 0, 0]} maxBarSize={32}>
+              <LabelList dataKey="displayValue" position="top" fill={INK_700} fontSize={12} fontWeight={600} />
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </div>
 
       <table className="sr-only">

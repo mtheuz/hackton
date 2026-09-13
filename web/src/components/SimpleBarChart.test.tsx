@@ -27,8 +27,8 @@ describe('SimpleBarChart', () => {
     expect(table).toHaveTextContent('10 PF');
   });
 
-  it('sizes the tallest bar at 100% height and scales the rest relative to it', () => {
-    render(
+  it('renders one chart bar per datum via recharts', () => {
+    const { container } = render(
       <SimpleBarChart
         title="Seu progresso"
         bars={[
@@ -39,13 +39,10 @@ describe('SimpleBarChart', () => {
       />,
     );
 
-    const bars = document.querySelectorAll('[data-bar-fill]');
-    expect(bars).toHaveLength(2);
-    expect(bars[0]).toHaveStyle({ height: '50%' });
-    expect(bars[1]).toHaveStyle({ height: '100%' });
+    expect(container.querySelectorAll('.recharts-bar-rectangle')).toHaveLength(2);
   });
 
-  it('hides the visual bars from assistive tech since the table carries the same data', () => {
+  it('hides the visual chart from assistive tech since the table carries the same data', () => {
     const { container } = render(
       <SimpleBarChart
         title="Seu progresso"
