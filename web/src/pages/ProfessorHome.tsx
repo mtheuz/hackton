@@ -12,7 +12,7 @@ import { DisciplinaManager } from '../components/DisciplinaManager';
 import { TurmaOverview } from '../components/TurmaOverview';
 import { LessonList } from '../components/LessonList';
 import { ProfessorDashboard } from '../components/ProfessorDashboard';
-import { ProfessorTabBar, type ProfessorTab } from '../components/ProfessorTabBar';
+import { ProfessorTabBar, ProfessorTabBarDesktop, type ProfessorTab } from '../components/ProfessorTabBar';
 import type { LiveActivity, PollContent, QuizContent } from '../types/modoAula';
 import type { Lesson, LessonSlide } from '../types/lesson';
 
@@ -80,7 +80,7 @@ export function ProfessorHome() {
       </header>
 
       {session ? (
-        <main className="mx-auto max-w-2xl space-y-4 p-4 pb-24 sm:p-6">
+        <main className="mx-auto max-w-5xl space-y-4 p-4 pb-24 sm:p-6 md:pb-8 lg:p-8">
           <ModoAulaProfessor
             classes={classes}
             session={session}
@@ -98,7 +98,9 @@ export function ProfessorHome() {
         </main>
       ) : (
         <>
-          <main className="mx-auto max-w-5xl space-y-4 p-4 pb-24 sm:p-8">
+          <main className="mx-auto max-w-5xl space-y-4 p-4 pb-24 sm:p-6 md:space-y-6 md:pb-10 lg:p-8">
+            <ProfessorTabBarDesktop active={tab} onChange={setTab} />
+
             {tab === 'dashboard' && (
               <ProfessorDashboard
                 teacherName={user.name}
@@ -109,21 +111,23 @@ export function ProfessorHome() {
             )}
 
             {tab === 'disciplinas' && (
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="space-y-4">
                 <DisciplinaManager disciplines={disciplines} onCreate={createDiscipline} onRename={renameDiscipline} />
-                {classes.map((c) => (
-                  <TurmaOverview
-                    key={c.id}
-                    classInfo={c}
-                    disciplines={disciplines}
-                    onAssignDiscipline={assignDiscipline}
-                  />
-                ))}
+                <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {classes.map((c) => (
+                    <TurmaOverview
+                      key={c.id}
+                      classInfo={c}
+                      disciplines={disciplines}
+                      onAssignDiscipline={assignDiscipline}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
             {tab === 'aulas' && (
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
                 <LessonList
                   classes={classes}
                   lessons={lessons}
