@@ -142,26 +142,17 @@ export function AlunoHome() {
 
         {tab === 'progresso' && (
           <>
-            <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
-              <h2 className="text-sm font-semibold text-ink-700">Seu progresso</h2>
-              {progress.length === 0 ? (
-                <div className="mt-2 flex flex-col items-center gap-2 py-4 text-center">
-                  <EmptyProgressIcon aria-hidden className="h-16 w-16" />
-                  <p className="text-sm text-ink-500">Ainda sem progresso registrado.</p>
-                </div>
-              ) : (
-                <ul className="mt-3 space-y-2">
-                  {progress.map((p) => (
-                    <li key={p.subject} className="flex items-center justify-between text-sm">
-                      <span className="capitalize text-ink-700">{p.subject}</span>
-                      <span className="font-medium text-ink-700">
-                        Nível {p.level} · {p.pfAccumulated} PF
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+            <SimpleBarChart
+              title="Seu progresso"
+              bars={progress.map((p) => ({
+                key: p.subject,
+                label: p.subject.charAt(0).toUpperCase() + p.subject.slice(1),
+                value: p.pfAccumulated,
+                displayValue: `${p.pfAccumulated} PF`,
+                tableLabel: `${p.subject} — Nível ${p.level}, ${p.pfAccumulated} PF`,
+              }))}
+              emptyMessage="Ainda sem progresso registrado."
+            />
 
             <MoodPerformanceInsight buckets={moodPerformance} />
           </>
