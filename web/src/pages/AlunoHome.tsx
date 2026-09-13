@@ -17,7 +17,7 @@ import { StreakBadge } from '../components/StreakBadge';
 import { ChatTutor } from '../components/ChatTutor';
 import { AlunoTabBar, type AlunoTab } from '../components/AlunoTabBar';
 import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
-import GraduationCapIcon from '~icons/streamline-emojis/graduation-cap';
+import RobotIcon from '~icons/streamline-emojis/robot-face-1';
 
 export function AlunoHome() {
   const user = useAuthStore((s) => s.user);
@@ -66,6 +66,29 @@ export function AlunoHome() {
   // respondeu hoje) — decisão temporária, ver [[project-mood-entry-flow]].
   const showMoodPrompt = !moodLoading && !moodPromptDismissed;
 
+  const firstName = user.name.split(' ')[0];
+  const tabMascot: Record<AlunoTab, { src: string; alt: string; headline: string; sub: string }> = {
+    aula: {
+      src: '/aluno-mascot.png',
+      alt: 'Mascote Fokido estudando com um livro',
+      headline: `Modo aula ligado, ${firstName}! 📚`,
+      sub: 'Acompanhe a aula e responda no seu ritmo.',
+    },
+    intercepta: {
+      src: '/aluno-mascot-m.png',
+      alt: 'Mascote Fokido acenando',
+      headline: `Bora praticar, ${firstName}! 👋`,
+      sub: 'Transforme seu tempo em foco e conquiste novas recompensas hoje.',
+    },
+    progresso: {
+      src: '/aluno-mascot-f.png',
+      alt: 'Mascote Fokido olhando estatísticas de progresso',
+      headline: `Olha seu progresso, ${firstName}! 📊`,
+      sub: 'Veja quanto você já evoluiu em cada matéria.',
+    },
+  };
+  const mascot = tabMascot[tab];
+
   return (
     <div className="min-h-svh bg-canvas pb-safe">
       {showMoodPrompt && (
@@ -100,16 +123,17 @@ export function AlunoHome() {
               Fokido
             </span>
             <h2 className="mt-1 text-base font-bold text-ink-700">
-              Bora praticar, {user.name.split(' ')[0]}! 👋
+              {mascot.headline}
             </h2>
             <p className="mt-1 text-xs leading-relaxed text-ink-500">
-              Transforme seu tempo em foco e conquiste novas recompensas hoje.
+              {mascot.sub}
             </p>
           </div>
           <img
-            src="/aluno-mascot.png"
-            alt="Mascote Fokido"
-            className="absolute -top-9 -right-1 h-36 w-auto object-contain drop-shadow-2xl transition-transform duration-300 hover:scale-110 pointer-events-none select-none"
+            key={mascot.src}
+            src={mascot.src}
+            alt={mascot.alt}
+            className="grym-reveal absolute -top-9 -right-1 h-36 w-auto object-contain drop-shadow-2xl transition-transform duration-300 hover:scale-110 pointer-events-none select-none"
           />
         </section>
 
@@ -163,10 +187,11 @@ export function AlunoHome() {
         <button
           type="button"
           onClick={() => setTutorOpen(true)}
-          className="fixed bottom-24 right-4 z-10 flex min-h-11 items-center gap-1.5 rounded-full bg-brand-600 px-4 text-sm font-semibold text-white shadow-lg active:bg-brand-800"
+          aria-label="Abrir Tutor Restrito"
+          className="fixed bottom-24 right-4 z-10 flex h-16 w-16 items-center justify-center rounded-full bg-surface shadow-lg active:scale-95"
         >
-          <GraduationCapIcon aria-hidden className="h-4 w-4" />
-          Tutor
+          <RobotIcon aria-hidden className="h-10 w-10" />
+          <span aria-hidden className="absolute -bottom-1.5 right-5 h-4 w-4 rotate-45 rounded-[2px] bg-surface shadow-lg" />
         </button>
       )}
       {tutorOpen && tutorActivityId && (

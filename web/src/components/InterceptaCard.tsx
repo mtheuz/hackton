@@ -25,8 +25,16 @@ export function InterceptaCard({
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const requestedRef = useRef(false);
 
   const displayedMission = showFeedback || submitting ? frozenMission ?? incomingMission : incomingMission;
+
+  useEffect(() => {
+    if (loading || incomingMission || requestedRef.current) return;
+    requestedRef.current = true;
+    void handleSimulate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, incomingMission]);
 
   async function handleAnswer(index: number) {
     setFrozenMission(incomingMission);
@@ -66,16 +74,8 @@ export function InterceptaCard({
           Trocas de impulso por estudo: {completedCount}
         </p>
         <p className="mt-1 text-xs text-ink-500">
-          {loading ? 'Carregando...' : 'Sem missão agora. Quando um impulso surgir, ela aparece aqui.'}
+          {loading || submitting ? 'Carregando desafio...' : 'Sem missão agora. Quando um impulso surgir, ela aparece aqui.'}
         </p>
-        <button
-          type="button"
-          disabled={submitting || loading}
-          onClick={() => void handleSimulate()}
-          className="mt-3 min-h-11 rounded-full bg-brand-600 px-4 text-xs font-semibold text-white transition-colors active:bg-brand-800 disabled:opacity-50"
-        >
-          Simular impulso (demo)
-        </button>
       </section>
     );
   }

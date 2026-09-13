@@ -1,5 +1,5 @@
 import GraduationCapIcon from '~icons/streamline-emojis/graduation-cap';
-import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
+import RocketIcon from '~icons/streamline-emojis/rocket';
 import AnalyticsBarsIcon from '~icons/streamline-emojis/bar-chart';
 
 export type AlunoTab = 'aula' | 'intercepta' | 'progresso';
@@ -12,7 +12,7 @@ interface AlunoTabBarProps {
 
 const TABS: { id: AlunoTab; label: string; Icon: typeof GraduationCapIcon }[] = [
   { id: 'aula', label: 'Aula', Icon: GraduationCapIcon },
-  { id: 'intercepta', label: 'Desafio', Icon: SynchronizeArrowIcon },
+  { id: 'intercepta', label: 'Desafio', Icon: RocketIcon },
   { id: 'progresso', label: 'Progresso', Icon: AnalyticsBarsIcon },
 ];
 

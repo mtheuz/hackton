@@ -26,12 +26,11 @@ describe('InterceptaCard', () => {
     await waitFor(() => expect(screen.getByText('56')).toBeDisabled());
   });
 
-  it('shows the simulate button and placar when there is no pending mission', () => {
+  it('auto-fetches a mission and shows the placar when there is no pending mission', () => {
     const onSimulateImpulse = vi.fn().mockResolvedValue(undefined);
     render(<InterceptaCard mission={null} completedCount={3} onAnswer={vi.fn()} onSimulateImpulse={onSimulateImpulse} />);
 
     expect(screen.getByText(/Trocas de impulso por estudo: 3/)).toBeInTheDocument();
-    fireEvent.click(screen.getByText('Simular impulso (demo)'));
     expect(onSimulateImpulse).toHaveBeenCalled();
   });
 });
