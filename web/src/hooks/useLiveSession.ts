@@ -10,6 +10,28 @@ import type {
 
 const CONTENT_TRIGGER_BUCKET = 'content-triggers';
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
+const SESSION_CODE_STORAGE_PREFIX = 'fokido:live-session-code:';
+
+function sessionCodeStorageKey(studentId: string): string {
+  return `${SESSION_CODE_STORAGE_PREFIX}${studentId}`;
+}
+
+function readStoredSessionCode(studentId: string): string | null {
+  try {
+    return localStorage.getItem(sessionCodeStorageKey(studentId));
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredSessionCode(studentId: string, code: string | null): void {
+  try {
+    if (code) localStorage.setItem(sessionCodeStorageKey(studentId), code);
+    else localStorage.removeItem(sessionCodeStorageKey(studentId));
+  } catch {
+    // localStorage indisponível (modo privado, etc) — só perde a reconexão automática.
+  }
+}
 
 interface SessionRow {
   id: string;
@@ -124,6 +146,10 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
   }, []);
 
   useEffect(() => {
+    if (session?.status === 'finished') writeStoredSessionCode(studentId, null);
+  }, [session?.status, studentId]);
+
+  useEffect(() => {
     if (!session) return;
     void refetchActivity(session.id);
     void refetchContentTrigger(session.id);
@@ -152,6 +178,26 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
     };
   }, [session, refetchActivity, refetchContentTrigger, refetchSessionStatus]);
 
+  const fetchActiveSessionByCode = useCallback(async (code: string) => {
+    const { data, error } = await supabase
+      .from('sessions')
+      .select('id, code, status, topic, teacher_id, created_at, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
+      .eq('code', code)
+      .eq('status', 'active')
+      .maybeSingle<SessionRow>();
+    if (error) throw error;
+    return data;
+  }, []);
+
+  const applySessionRow = useCallback(async (data: SessionRow) => {
+    setActivity(null);
+    setContentTrigger(null);
+    setAnswered(false);
+    setSessionConfig({ allowNotes: data.allow_notes, allowFreeChatbot: data.allow_free_chatbot, focusMode: data.focus_mode, quizAtEnd: data.quiz_at_end, accessibilityMode: data.accessibility_mode, allowTranscription: data.allow_transcription });
+    const { data: teacher } = data.teacher_id ? await supabase.from('users').select('name').eq('id', data.teacher_id).maybeSingle<{ name: string }>() : { data: null };
+    setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic, teacherName: teacher?.name, createdAt: data.created_at });
+  }, []);
+
   const join = useCallback(async (code: string) => {
     if (!/^\d{4}$/.test(code)) {
       setJoinError('Digite os 4 dígitos do código da aula.');
@@ -160,30 +206,47 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
     setJoining(true);
     setJoinError(null);
     try {
-      const { data, error } = await supabase
-        .from('sessions')
-        .select('id, code, status, topic, teacher_id, created_at, allow_notes, allow_free_chatbot, focus_mode, quiz_at_end, accessibility_mode, allow_transcription')
-        .eq('code', code)
-        .eq('status', 'active')
-        .maybeSingle<SessionRow>();
-
-      if (error) throw error;
+      const data = await fetchActiveSessionByCode(code);
       if (!data) {
         setJoinError('Código não encontrado. Confira com o professor.');
         return;
       }
-      setActivity(null);
-      setContentTrigger(null);
-      setAnswered(false);
-      setSessionConfig({ allowNotes: data.allow_notes, allowFreeChatbot: data.allow_free_chatbot, focusMode: data.focus_mode, quizAtEnd: data.quiz_at_end, accessibilityMode: data.accessibility_mode, allowTranscription: data.allow_transcription });
-      const { data: teacher } = data.teacher_id ? await supabase.from('users').select('name').eq('id', data.teacher_id).maybeSingle<{ name: string }>() : { data: null };
-      setSession({ id: data.id, code: data.code, status: data.status, topic: data.topic, teacherName: teacher?.name, createdAt: data.created_at });
+      await applySessionRow(data);
+      writeStoredSessionCode(studentId, data.code);
     } catch {
       setJoinError('Não foi possível entrar na aula. Confira sua conexão e tente novamente.');
     } finally {
       setJoining(false);
     }
-  }, []);
+  }, [fetchActiveSessionByCode, applySessionRow, studentId]);
+
+  // Reconecta sozinho se a página recarregar no meio de uma aula: sem isso,
+  // o estado (em memória) zera e o aluno cai de volta na tela de código,
+  // como se tivesse saído — mesmo a sessão continuando ativa no professor.
+  useEffect(() => {
+    if (!studentId || session) return;
+    const storedCode = readStoredSessionCode(studentId);
+    if (!storedCode) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const data = await fetchActiveSessionByCode(storedCode);
+        if (cancelled) return;
+        if (!data) {
+          writeStoredSessionCode(studentId, null);
+          return;
+        }
+        await applySessionRow(data);
+      } catch {
+        // Sem conexão no reload: mantém o código guardado pra tentar de novo depois.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [studentId, session, fetchActiveSessionByCode, applySessionRow]);
 
   const submitAnswer = useCallback(
     async (payload: { selectedIndex?: number; text?: string }) => {
@@ -207,13 +270,14 @@ export function useLiveSession(studentId: string): UseLiveSessionResult {
   );
 
   const leave = useCallback(() => {
+    writeStoredSessionCode(studentId, null);
     setSession(null);
     setActivity(null);
     setContentTrigger(null);
     setAnswered(false);
     setJoinError(null);
     setSessionConfig(null);
-  }, []);
+  }, [studentId]);
 
   const signalDoubt = useCallback(async () => {
     if (!session) return;

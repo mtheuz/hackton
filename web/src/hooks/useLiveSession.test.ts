@@ -74,6 +74,7 @@ vi.mock('../services/supabaseClient', () => ({
 
 describe('useLiveSession', () => {
   beforeEach(() => {
+    localStorage.clear();
     sessionsResult = { data: null, error: null };
     contentTriggerResult = {
       data: [
@@ -187,6 +188,36 @@ describe('useLiveSession', () => {
 
     await waitFor(() => expect(result.current.contentTrigger?.fileUrl).toBe('https://example.com/signed/apostila.pdf'));
     expect(createSignedUrlMock).toHaveBeenCalledWith('session-1/apostila.pdf', 60 * 60);
+  });
+
+  it('auto-rejoins the same session on a fresh mount, like after a page reload', async () => {
+    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }, error: null };
+    const first = renderHook(() => useLiveSession('student-1'));
+    await act(async () => {
+      await first.result.current.join('1234');
+    });
+    await waitFor(() => expect(first.result.current.session?.id).toBe('session-1'));
+
+    const reloaded = renderHook(() => useLiveSession('student-1'));
+    expect(reloaded.result.current.session).toBeNull();
+    await waitFor(() => expect(reloaded.result.current.session?.id).toBe('session-1'));
+  });
+
+  it('does not auto-rejoin after leave() clears the stored code', async () => {
+    sessionsResult = { data: { id: 'session-1', code: '1234', status: 'active', topic: 'Frações' }, error: null };
+    const first = renderHook(() => useLiveSession('student-1'));
+    await act(async () => {
+      await first.result.current.join('1234');
+    });
+    await waitFor(() => expect(first.result.current.session?.id).toBe('session-1'));
+
+    act(() => {
+      first.result.current.leave();
+    });
+
+    const reloaded = renderHook(() => useLiveSession('student-1'));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(reloaded.result.current.session).toBeNull();
   });
 });
 
