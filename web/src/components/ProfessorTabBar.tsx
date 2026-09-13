@@ -1,4 +1,4 @@
-import GraduationCapIcon from '~icons/twemoji/graduation-cap';
+import GraduationCapIcon from '~icons/streamline-emojis/graduation-cap';
 import BooksIcon from '~icons/twemoji/books';
 
 export type ProfessorTab = 'dashboard' | 'disciplinas' | 'aulas';

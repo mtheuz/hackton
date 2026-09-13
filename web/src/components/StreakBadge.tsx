@@ -1,4 +1,4 @@
-import FireIcon from '~icons/twemoji/fire';
+import FireIcon from '~icons/streamline-emojis/fire';
 
 interface StreakBadgeProps {
   streak: number;

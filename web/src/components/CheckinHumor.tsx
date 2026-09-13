@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import type { MoodCheckin, MoodValue } from '../types/intercepta';
-import DisappointedFaceIcon from '~icons/twemoji/disappointed-face';
-import ConfusedFaceIcon from '~icons/twemoji/confused-face';
-import NeutralFaceIcon from '~icons/twemoji/neutral-face';
-import SlightlySmilingFaceIcon from '~icons/twemoji/slightly-smiling-face';
-import GrinningFaceWithSmilingEyesIcon from '~icons/twemoji/grinning-face-with-smiling-eyes';
+import DisappointedFaceIcon from '~icons/streamline-emojis/disappointed-face';
+import ConfusedFaceIcon from '~icons/streamline-emojis/confused-face';
+import NeutralFaceIcon from '~icons/streamline-emojis/neutral-face';
+import SlightlySmilingFaceIcon from '~icons/streamline-emojis/slightly-smiling-face';
+import GrinningFaceWithSmilingEyesIcon from '~icons/streamline-emojis/grinning-face-with-smiling-eyes';
 
 const MOODS: { value: MoodValue; Icon: typeof DisappointedFaceIcon; label: string }[] = [
   { value: 'muito_mal', Icon: DisappointedFaceIcon, label: 'Muito mal' },

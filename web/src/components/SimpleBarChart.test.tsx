@@ -56,4 +56,18 @@ describe('SimpleBarChart', () => {
 
     expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
   });
+
+  it('skips the card chrome when bare is set, for embedding inside a parent card', () => {
+    const { container } = render(
+      <SimpleBarChart
+        title="Humor × acerto"
+        bars={[{ key: 'a', label: 'A', value: 10, displayValue: '10%' }]}
+        emptyMessage="Ainda sem dados."
+        bare
+      />,
+    );
+
+    expect(container.querySelector('section')).toBeNull();
+    expect(screen.getByRole('heading', { name: 'Humor × acerto' })).toBeInTheDocument();
+  });
 });

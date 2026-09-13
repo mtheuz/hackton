@@ -1,9 +1,9 @@
 import type { SchoolDailySignal } from '../types/school';
-import DisappointedFaceIcon from '~icons/twemoji/disappointed-face';
-import ConfusedFaceIcon from '~icons/twemoji/confused-face';
-import NeutralFaceIcon from '~icons/twemoji/neutral-face';
-import SlightlySmilingFaceIcon from '~icons/twemoji/slightly-smiling-face';
-import GrinningFaceWithSmilingEyesIcon from '~icons/twemoji/grinning-face-with-smiling-eyes';
+import DisappointedFaceIcon from '~icons/streamline-emojis/disappointed-face';
+import ConfusedFaceIcon from '~icons/streamline-emojis/confused-face';
+import NeutralFaceIcon from '~icons/streamline-emojis/neutral-face';
+import SlightlySmilingFaceIcon from '~icons/streamline-emojis/slightly-smiling-face';
+import GrinningFaceWithSmilingEyesIcon from '~icons/streamline-emojis/grinning-face-with-smiling-eyes';
 import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
 import PersonRaisingHandIcon from '~icons/twemoji/person-raising-hand';
 

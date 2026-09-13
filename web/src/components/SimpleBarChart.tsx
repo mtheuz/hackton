@@ -14,24 +14,30 @@ interface SimpleBarChartProps {
   title: string;
   bars: BarDatum[];
   emptyMessage: string;
+  /** Skip the card chrome (border/shadow) when embedding inside a parent card. */
+  bare?: boolean;
 }
 
 const CHART_HEIGHT_PX = 140;
+const CARD_CLASSNAME = 'rounded-2xl border border-line-200 bg-surface p-5 shadow-sm';
 
-export function SimpleBarChart({ title, bars, emptyMessage }: SimpleBarChartProps) {
+export function SimpleBarChart({ title, bars, emptyMessage, bare = false }: SimpleBarChartProps) {
+  const Wrapper = bare ? 'div' : 'section';
+  const wrapperClassName = bare ? undefined : CARD_CLASSNAME;
+
   if (bars.length === 0) {
     return (
-      <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+      <Wrapper className={wrapperClassName}>
         <h2 className="text-sm font-semibold text-ink-700">{title}</h2>
         <p className="mt-2 text-sm text-ink-500">{emptyMessage}</p>
-      </section>
+      </Wrapper>
     );
   }
 
   const maxValue = Math.max(...bars.map((bar) => bar.value), 1);
 
   return (
-    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+    <Wrapper className={wrapperClassName}>
       <h2 className="text-sm font-semibold text-ink-700">{title}</h2>
 
       <div
@@ -77,6 +83,6 @@ export function SimpleBarChart({ title, bars, emptyMessage }: SimpleBarChartProp
           ))}
         </tbody>
       </table>
-    </section>
+    </Wrapper>
   );
 }

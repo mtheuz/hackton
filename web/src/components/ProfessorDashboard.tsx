@@ -1,5 +1,5 @@
 import BooksIcon from '~icons/twemoji/books';
-import GraduationCapIcon from '~icons/twemoji/graduation-cap';
+import GraduationCapIcon from '~icons/streamline-emojis/graduation-cap';
 import MemoIcon from '~icons/twemoji/memo';
 import type { Discipline } from '../types/disciplina';
 import type { Lesson } from '../types/lesson';

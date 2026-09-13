@@ -1,6 +1,6 @@
-import GraduationCapIcon from '~icons/twemoji/graduation-cap';
+import GraduationCapIcon from '~icons/streamline-emojis/graduation-cap';
 import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
-import AnalyticsBarsIcon from '~icons/streamline-ultimate-color/analytics-bars-3d';
+import AnalyticsBarsIcon from '~icons/streamline-emojis/bar-chart';
 
 export type AlunoTab = 'aula' | 'intercepta' | 'progresso';
 

@@ -1,4 +1,4 @@
-import BarChartIcon from '~icons/twemoji/bar-chart';
+import BarChartIcon from '~icons/streamline-emojis/bar-chart';
 import { useClassOverview } from '../hooks/useClassOverview';
 import { useClassMoodPerformance } from '../hooks/useClassMoodPerformance';
 import { ClassMoodInsight } from './ClassMoodInsight';

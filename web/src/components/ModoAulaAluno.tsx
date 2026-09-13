@@ -4,7 +4,7 @@ import type { SessionConfig } from '../types/modoAula';
 import { useClassTranscription } from '../hooks/useClassTranscription';
 import { QrScannerModal } from './QrScannerModal';
 import CameraIcon from '~icons/twemoji/camera';
-import PaperclipIcon from '~icons/twemoji/paperclip';
+import PaperclipIcon from '~icons/streamline-emojis/paperclip';
 
 function codeFromScan(value: string): string {
   try {

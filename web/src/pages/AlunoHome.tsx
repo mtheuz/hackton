@@ -17,7 +17,7 @@ import { StreakBadge } from '../components/StreakBadge';
 import { ChatTutor } from '../components/ChatTutor';
 import { AlunoTabBar, type AlunoTab } from '../components/AlunoTabBar';
 import SynchronizeArrowIcon from '~icons/streamline-ultimate-color/synchronize-arrow';
-import GraduationCapIcon from '~icons/twemoji/graduation-cap';
+import GraduationCapIcon from '~icons/streamline-emojis/graduation-cap';
 
 export function AlunoHome() {
   const user = useAuthStore((s) => s.user);
