@@ -111,18 +111,15 @@ export function ProfessorHome() {
             )}
 
             {tab === 'disciplinas' && (
-              <div className="space-y-4">
-                <DisciplinaManager disciplines={disciplines} onCreate={createDiscipline} onRename={renameDiscipline} />
-                <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {classes.map((c) => (
-                    <TurmaOverview
-                      key={c.id}
-                      classInfo={c}
-                      disciplines={disciplines}
-                      onAssignDiscipline={assignDiscipline}
-                    />
-                  ))}
+              <div className="flex flex-wrap items-start gap-4">
+                <div className="w-full sm:w-80">
+                  <DisciplinaManager disciplines={disciplines} onCreate={createDiscipline} onRename={renameDiscipline} />
                 </div>
+                {classes.map((c) => (
+                  <div key={c.id} className="w-full sm:w-80">
+                    <TurmaOverview classInfo={c} disciplines={disciplines} onAssignDiscipline={assignDiscipline} />
+                  </div>
+                ))}
               </div>
             )}
 
