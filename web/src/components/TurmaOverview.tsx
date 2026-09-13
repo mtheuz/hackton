@@ -1,4 +1,4 @@
-import BarChartIcon from '~icons/streamline-emojis/bar-chart';
+import BarChartIcon from '~icons/twemoji/bar-chart';
 import { useClassOverview } from '../hooks/useClassOverview';
 import { useClassMoodPerformance } from '../hooks/useClassMoodPerformance';
 import { ClassMoodInsight } from './ClassMoodInsight';
@@ -16,7 +16,7 @@ export function TurmaOverview({ classInfo, disciplines, onAssignDiscipline }: Tu
   const { buckets: moodBuckets, loading: moodLoading } = useClassMoodPerformance(classInfo.id);
 
   return (
-    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm">
+    <section className="rounded-2xl border border-line-200 bg-surface p-5 shadow-sm sm:p-6">
       <h2 className="text-sm font-semibold text-ink-700">{classInfo.name}</h2>
 
       <label htmlFor={`discipline-${classInfo.id}`} className="mt-2 block text-xs font-semibold text-ink-700">
